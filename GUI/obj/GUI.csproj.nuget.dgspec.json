@@ -1,0 +1,277 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\GUI\\GUI.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\BLL\\BLL.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\BLL\\BLL.csproj",
+        "projectName": "BLL",
+        "projectPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\BLL\\BLL.csproj",
+        "packagesPath": "C:\\Users\\LOC\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\BLL\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\LOC\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DAL\\DAL.csproj": {
+                "projectPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DAL\\DAL.csproj"
+              },
+              "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DTO\\DTO.csproj": {
+                "projectPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DTO\\DTO.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DAL\\DAL.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DAL\\DAL.csproj",
+        "projectName": "DAL",
+        "projectPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DAL\\DAL.csproj",
+        "packagesPath": "C:\\Users\\LOC\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DAL\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\LOC\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DTO\\DTO.csproj": {
+                "projectPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DTO\\DTO.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "System.Data.SqlClient": {
+              "target": "Package",
+              "version": "[4.9.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DTO\\DTO.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DTO\\DTO.csproj",
+        "projectName": "DTO",
+        "projectPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DTO\\DTO.csproj",
+        "packagesPath": "C:\\Users\\LOC\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DTO\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\LOC\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\GUI\\GUI.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\GUI\\GUI.csproj",
+        "projectName": "GUI",
+        "projectPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\GUI\\GUI.csproj",
+        "packagesPath": "C:\\Users\\LOC\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\GUI\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\LOC\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0-windows"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0-windows7.0": {
+            "targetAlias": "net8.0-windows",
+            "projectReferences": {
+              "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\BLL\\BLL.csproj": {
+                "projectPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\BLL\\BLL.csproj"
+              },
+              "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DTO\\DTO.csproj": {
+                "projectPath": "C:\\Users\\LOC\\source\\repos\\Software\\NhaHang\\DTO\\DTO.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net8.0-windows7.0": {
+          "targetAlias": "net8.0-windows",
+          "dependencies": {
+            "System.Data.SqlClient": {
+              "target": "Package",
+              "version": "[4.9.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            },
+            "Microsoft.WindowsDesktop.App.WindowsForms": {
+              "privateAssets": "none"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
