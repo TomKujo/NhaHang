@@ -1,0 +1,17 @@
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\bin\Debug\net8.0\BLL.deps.json
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\bin\Debug\net8.0\BLL.dll
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\bin\Debug\net8.0\BLL.pdb
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\bin\Debug\net8.0\DAL.dll
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\bin\Debug\net8.0\DTO.dll
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\bin\Debug\net8.0\DAL.pdb
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\bin\Debug\net8.0\DTO.pdb
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\obj\Debug\net8.0\BLL.csproj.AssemblyReference.cache
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\obj\Debug\net8.0\BLL.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\obj\Debug\net8.0\BLL.AssemblyInfoInputs.cache
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\obj\Debug\net8.0\BLL.AssemblyInfo.cs
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\obj\Debug\net8.0\BLL.csproj.CoreCompileInputs.cache
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\obj\Debug\net8.0\BLL.csproj.Up2Date
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\obj\Debug\net8.0\BLL.dll
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\obj\Debug\net8.0\refint\BLL.dll
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\obj\Debug\net8.0\BLL.pdb
+C:\Users\LOC\source\repos\Software\NhaHang\BLL\obj\Debug\net8.0\ref\BLL.dll
