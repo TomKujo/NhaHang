@@ -49,29 +49,28 @@ namespace GUI
 
             switch (result)
             {
-                // Thêm ServiceBLL. vào trước LoginResult
-                case ServiceBLL.LoginResult.Success:
+                case LoginResult.Success:
                     frmMain f = new frmMain(user);
                     this.Hide();
                     f.ShowDialog();
                     this.Close();
                     break;
 
-                case ServiceBLL.LoginResult.InvalidCredentials:
+                case LoginResult.InvalidCredentials:
                     ShowError("Mật khẩu không đúng! \nLưu ý: Nhập sai 3 lần tài khoản sẽ bị KHÓA.");
                     txtMatKhau.Clear();
                     txtMatKhau.Focus();
                     break;
 
-                case ServiceBLL.LoginResult.Locked:
+                case LoginResult.Locked:
                     ShowError("Tài khoản này đã bị KHÓA do vi phạm bảo mật.\nVui lòng liên hệ Quản lý để mở khóa.");
                     break;
 
-                case ServiceBLL.LoginResult.CustomerDenied:
+                case LoginResult.CustomerDenied:
                     ShowWarning("Tài khoản Khách hàng chỉ dùng cho đặt bàn Online/App.\nKhông thể truy cập hệ thống quản lý.");
                     break;
 
-                case ServiceBLL.LoginResult.UserNotFound:
+                case LoginResult.UserNotFound:
                     ShowError("Tài khoản không tồn tại trong hệ thống.");
                     txtMaNV.Focus();
                     break;

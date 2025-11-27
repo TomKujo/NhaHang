@@ -16,6 +16,9 @@
     <Compile Update="ucNhanSu.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Update="ucTableItem.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Update="ucThucDon.cs">
       <SubType>UserControl</SubType>
     </Compile>

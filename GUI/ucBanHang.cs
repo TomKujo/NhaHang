@@ -3,6 +3,7 @@ using DTO;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+// Cần Reference: Microsoft.VisualBasic (Project -> Add Reference -> search Microsoft.VisualBasic)
 
 namespace GUI
 {
@@ -17,364 +18,293 @@ namespace GUI
         // Lưu mã bàn đang được chọn
         string selectedBanID = null;
 
-        // Các Control giao diện (Khai báo biến toàn cục để dùng trong các hàm)
+        // Timer cập nhật trạng thái bàn tự động
+        System.Windows.Forms.Timer timerUpdate;
+
+        // --- CÁC CONTROL GIAO DIỆN ---
         private FlowLayoutPanel flpBan;
         private DataGridView dgvOrder;
         private Label lblTitleBan;
         private Label lblTongTien;
 
-        // QUAN TRỌNG: Khai báo Button ở đây để hàm Phân quyền nhìn thấy
+        // Nút bấm (Khai báo toàn cục để phân quyền)
         private Button btnThanhToan;
         private Button btnGoiMon;
+        private Button btnDatBan;
         private Button btnHuy;
 
-        // 1. Khai báo ContextMenuStrip (Menu chuột phải)
+        // Tìm kiếm
+        private TextBox txtTimKiem;
+
+        // Menu chuột phải
         private ContextMenuStrip ctxMenuBan;
-        private string contextBanID = null; // Lưu mã bàn đang được click chuột phải
+        private string contextBanID = null;
 
         public ucBanHang(NguoiDungDTO user)
         {
             InitializeComponent();
             this.currentUser = user;
 
-            // Khởi tạo Menu chuột phải
-            InitContextMenu();
+            // Setup Timer (Quét mỗi 1 phút để cập nhật trạng thái đặt bàn)
+            timerUpdate = new System.Windows.Forms.Timer();
+            timerUpdate.Interval = 60000;
+            timerUpdate.Tick += (s, e) => {
+                bll.RefreshTableStatus();
+                LoadBan(txtTimKiem != null ? txtTimKiem.Text : "");
+            };
+            timerUpdate.Start();
 
+            // Khởi tạo giao diện
+            InitContextMenu();
             SetupManualUI();
             LoadBan();
             ApplyPermission();
         }
 
-        // --- HÀM 1: VẼ GIAO DIỆN CHIA CỘT (60% TRÁI - 40% PHẢI) ---
+        // --- 1. MENU CHUỘT PHẢI (CRUD BÀN) ---
+        void InitContextMenu()
+        {
+            ctxMenuBan = new ContextMenuStrip();
+
+            // Mục 1: Đặt lịch
+            ToolStripMenuItem itemDat = new ToolStripMenuItem("Đặt lịch bàn này");
+            itemDat.Click += (s, e) => ShowBookingForm(contextBanID);
+
+            // Mục 2: Sửa tên
+            ToolStripMenuItem itemSua = new ToolStripMenuItem("Sửa tên/loại");
+            itemSua.Click += (s, e) => {
+                string newName = Microsoft.VisualBasic.Interaction.InputBox("Tên mới:", "Sửa Bàn", "");
+                if (!string.IsNullOrEmpty(newName))
+                {
+                    MessageBox.Show(bll.UpdateTable(contextBanID, newName, "Thường"));
+                    LoadBan(txtTimKiem.Text);
+                }
+            };
+
+            // Mục 3: Xóa bàn
+            ToolStripMenuItem itemXoa = new ToolStripMenuItem("Xóa bàn");
+            itemXoa.Click += (s, e) => {
+                if (MessageBox.Show("Xóa bàn này?", "Xác nhận", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                {
+                    MessageBox.Show(bll.DeleteTable(contextBanID));
+                    LoadBan(txtTimKiem.Text);
+                }
+            };
+
+            ctxMenuBan.Items.AddRange(new ToolStripItem[] { itemDat, new ToolStripSeparator(), itemSua, itemXoa });
+        }
+
+        // --- 2. VẼ GIAO DIỆN (LAYOUT) ---
         void SetupManualUI()
         {
             this.BackColor = Color.WhiteSmoke;
-
-            // Layout chính chia 2 cột
-            TableLayoutPanel layout = new TableLayoutPanel();
-            layout.Dock = DockStyle.Fill;
-            layout.ColumnCount = 2;
-            // Cột 1 (Bàn): 60%, Cột 2 (Hóa đơn): 40%
+            TableLayoutPanel layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2 };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60F));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
 
-            // --- CỘT TRÁI: DANH SÁCH BÀN ---
+            // === CỘT TRÁI: DANH SÁCH BÀN ===
             Panel pnlLeft = new Panel { Dock = DockStyle.Fill, Padding = new Padding(10) };
 
-            // FlowLayoutPanel chứa các ô bàn
-            flpBan = new FlowLayoutPanel();
-            flpBan.Dock = DockStyle.Fill;
-            flpBan.AutoScroll = true; // Cho phép cuộn nếu nhiều bàn
-            flpBan.BackColor = Color.White;
+            // Thanh tìm kiếm & Thêm bàn
+            Panel pnlSearch = new Panel { Dock = DockStyle.Top, Height = 40 };
+            txtTimKiem = new TextBox { Width = 250, Height = 30, Location = new Point(0, 5), Font = new Font("Segoe UI", 10) };
+            txtTimKiem.PlaceholderText = "Tìm kiếm bàn...";
+            txtTimKiem.TextChanged += (s, e) => LoadBan(txtTimKiem.Text);
 
-            // Thanh tìm kiếm (Option) - Có thể thêm sau
+            Button btnAddTable = new Button { Text = "+", Width = 40, Height = 30, Location = new Point(260, 4) };
+            btnAddTable.Click += (s, e) => {
+                string ten = Microsoft.VisualBasic.Interaction.InputBox("Tên bàn mới:", "Thêm Bàn");
+                if (!string.IsNullOrEmpty(ten)) { bll.AddTable(ten, "Thường"); LoadBan(); }
+            };
+
+            pnlSearch.Controls.Add(txtTimKiem);
+            // Chỉ quản lý mới thấy nút thêm bàn
+            if (currentUser.VaiTro == "Quản lý") pnlSearch.Controls.Add(btnAddTable);
+
+            flpBan = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.White };
 
             pnlLeft.Controls.Add(flpBan);
+            pnlLeft.Controls.Add(pnlSearch);
 
-            // --- CỘT PHẢI: CHI TIẾT HÓA ĐƠN ---
+            // === CỘT PHẢI: CHI TIẾT ORDER ===
             Panel pnlRight = new Panel { Dock = DockStyle.Fill, Padding = new Padding(10), BackColor = Color.White };
 
-            // 1. Header Mã bàn (Trên cùng)
-            lblTitleBan = new Label();
-            lblTitleBan.Text = "Vui lòng chọn bàn";
-            lblTitleBan.Dock = DockStyle.Top;
-            lblTitleBan.Height = 50;
-            lblTitleBan.Font = new Font("Segoe UI", 16, FontStyle.Bold);
-            lblTitleBan.TextAlign = ContentAlignment.MiddleCenter;
-            lblTitleBan.ForeColor = UIHelper.TextColor;
+            lblTitleBan = new Label { Text = "Chọn bàn", Dock = DockStyle.Top, Height = 40, Font = new Font("Segoe UI", 14, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter };
 
-            // 2. Footer Action (Dưới cùng: Nút bấm + Tổng tiền)
-            Panel pnlAction = new Panel { Dock = DockStyle.Bottom, Height = 100 };
+            dgvOrder = new DataGridView { Dock = DockStyle.Fill };
+            UIHelper.StyleDataGridView(dgvOrder);
 
-            lblTongTien = new Label();
-            lblTongTien.Text = "Tổng tiền: 0 VNĐ";
-            lblTongTien.Dock = DockStyle.Top;
-            lblTongTien.Height = 30;
-            lblTongTien.TextAlign = ContentAlignment.MiddleRight;
-            lblTongTien.Font = new Font("Segoe UI", 12, FontStyle.Bold);
-            lblTongTien.ForeColor = UIHelper.PrimaryColor;
+            // Footer chứa nút bấm
+            Panel pnlFooter = new Panel { Dock = DockStyle.Bottom, Height = 120 };
+            lblTongTien = new Label { Text = "0 VNĐ", Dock = DockStyle.Top, TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = UIHelper.PrimaryColor };
 
-            // Khu vực chứa nút bấm
-            Panel pnlButtons = new Panel { Dock = DockStyle.Bottom, Height = 50 };
-
-            Button btnHuy = new Button { Text = "Hủy", Dock = DockStyle.Left, Width = 80 };
-            UIHelper.StyleButton(btnHuy, false); // Style màu trắng
-
-            Button btnThanhToan = new Button { Text = "Thanh toán", Dock = DockStyle.Right, Width = 120 };
-            UIHelper.StyleButton(btnThanhToan, true); // Style màu cam
-            btnThanhToan.Click += BtnThanhToan_Click;
-
-            Button btnGoiMon = new Button { Text = "Gọi món", Dock = DockStyle.Fill }; // Nút giữa
+            btnGoiMon = new Button { Text = "GỌI MÓN", Width = 100, Height = 40, Top = 40, Left = 10 };
             UIHelper.StyleButton(btnGoiMon, false);
-            btnGoiMon.Margin = new Padding(5, 0, 5, 0); // Cách lề
             btnGoiMon.Click += BtnGoiMon_Click;
 
-            pnlButtons.Controls.Add(btnGoiMon); // Add nút giữa trước nếu dùng Dock Fill
-            pnlButtons.Controls.Add(btnThanhToan);
-            pnlButtons.Controls.Add(btnHuy);
+            btnDatBan = new Button { Text = "ĐẶT LỊCH", Width = 100, Height = 40, Top = 40, Left = 120 };
+            UIHelper.StyleButton(btnDatBan, false);
+            btnDatBan.Click += (s, e) => { if (selectedBanID != null) ShowBookingForm(selectedBanID); };
 
-            pnlAction.Controls.Add(lblTongTien);
-            pnlAction.Controls.Add(pnlButtons);
+            btnThanhToan = new Button { Text = "THANH TOÁN", Width = 200, Height = 40, Top = 40, Left = 230 };
+            UIHelper.StyleButton(btnThanhToan, true);
+            btnThanhToan.Click += BtnThanhToan_Click;
+            btnThanhToan.Enabled = false; // Mặc định khóa nút thanh toán
 
-            // 3. Grid Order (Ở giữa)
-            dgvOrder = new DataGridView();
-            dgvOrder.Dock = DockStyle.Fill;
-            UIHelper.StyleDataGridView(dgvOrder); // Áp dụng Style đẹp
+            pnlFooter.Controls.AddRange(new Control[] { lblTongTien, btnGoiMon, btnDatBan, btnThanhToan });
 
-            // Ráp vào cột phải
-            pnlRight.Controls.Add(dgvOrder); // Add Grid trước (Fill)
-            pnlRight.Controls.Add(pnlAction); // Add Footer (Bottom)
-            pnlRight.Controls.Add(lblTitleBan); // Add Header (Top)
+            pnlRight.Controls.Add(dgvOrder);
+            pnlRight.Controls.Add(pnlFooter);
+            pnlRight.Controls.Add(lblTitleBan);
 
-            // Ráp 2 cột vào Layout chính
             layout.Controls.Add(pnlLeft, 0, 0);
             layout.Controls.Add(pnlRight, 1, 0);
-
             this.Controls.Add(layout);
         }
 
-        // --- HÀM 2: LOAD DANH SÁCH BÀN TỪ CSDL ---
-        void LoadBan()
+        // --- 3. LOGIC LOAD DỮ LIỆU ---
+        void LoadBan(string keyword = "")
         {
             flpBan.Controls.Clear();
             var listBan = bll.GetListBan();
 
             foreach (var ban in listBan)
             {
+                // Lọc
+                if (!string.IsNullOrEmpty(keyword) &&
+                    !ban.TenBan.ToLower().Contains(keyword.ToLower()) &&
+                    !ban.Loai.ToLower().Contains(keyword.ToLower()))
+                    continue;
+
                 Button btn = new Button();
-                btn.Size = new Size(110, 110);
-
-                // Hiển thị thông tin chi tiết hơn
+                btn.Size = new Size(100, 100);
                 btn.Text = $"{ban.TenBan}\n({ban.Loai})\n{ban.TrangThai}";
-
                 btn.Tag = ban.MaBan;
                 btn.Margin = new Padding(10);
                 btn.FlatStyle = FlatStyle.Flat;
                 btn.FlatAppearance.BorderSize = 0;
-                btn.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+                btn.Font = new Font("Segoe UI", 9, FontStyle.Bold);
                 btn.ForeColor = Color.White;
-                btn.Cursor = Cursors.Hand;
 
-                switch (ban.TrangThai)
-                {
-                    case "Có khách":
-                        btn.BackColor = UIHelper.PrimaryColor; // Cam
-                        break;
-                    case "Đặt trước": // Cần thêm trạng thái này vào Enum DB nếu muốn
-                        btn.BackColor = Color.RoyalBlue;
-                        break;
-                    default:
-                        btn.BackColor = Color.DarkGray; // Trống
-                        break;
-                }
+                // Màu sắc trạng thái
+                if (ban.TrangThai == "Có khách")
+                    btn.BackColor = Color.OrangeRed;
+                else
+                    btn.BackColor = Color.SeaGreen; // Trống
 
-                // Sự kiện Click trái: Chọn bàn
+                // Click trái: Chọn bàn
                 btn.Click += (s, e) => {
                     selectedBanID = ban.MaBan;
-                    lblTitleBan.Text = $"BÀN: {ban.TenBan} - {ban.TrangThai}";
+                    lblTitleBan.Text = $"BÀN: {ban.TenBan}";
                     LoadOrder(ban.MaBan);
+
+                    // Chỉ cho phép thanh toán nếu bàn đang có khách
+                    btnThanhToan.Enabled = (ban.TrangThai == "Có khách");
+                    ApplyPermission(); // Áp dụng lại quyền sau khi bật nút
                 };
 
-                // Sự kiện Chuột phải: Mở menu
+                // Click phải: Mở menu
                 btn.MouseDown += (s, e) => {
                     if (e.Button == MouseButtons.Right)
                     {
-                        contextBanID = ban.MaBan; // Lưu lại ID bàn đang thao tác
-                        ctxMenuBan.Show(btn, e.Location); // Hiện menu tại vị trí chuột
+                        contextBanID = ban.MaBan;
+                        ctxMenuBan.Show(btn, e.Location);
                     }
                 };
 
                 flpBan.Controls.Add(btn);
             }
-
-            // Thêm một nút đặc biệt "THÊM BÀN MỚI" ở cuối danh sách
-            // Chỉ hiện nếu là Quản lý
-            if (currentUser.VaiTro == "Quản lý")
-            {
-                Button btnAdd = new Button();
-                btnAdd.Size = new Size(110, 110);
-                btnAdd.Text = "+ THÊM BÀN";
-                btnAdd.BackColor = Color.White;
-                btnAdd.ForeColor = Color.Gray;
-                btnAdd.FlatStyle = FlatStyle.Flat;
-                btnAdd.FlatAppearance.BorderColor = Color.Silver;
-                btnAdd.Click += (s, e) => {
-                    string ten = Microsoft.VisualBasic.Interaction.InputBox("Nhập tên bàn mới:", "Thêm bàn", "Bàn New");
-                    if (!string.IsNullOrEmpty(ten))
-                    {
-                        MessageBox.Show(bll.AddTable(ten, "Thường"));
-                        LoadBan();
-                    }
-                };
-                flpBan.Controls.Add(btnAdd);
-            }
         }
 
-        // --- HÀM 3: LOAD CHI TIẾT GỌI MÓN (Order) ---
         void LoadOrder(string maBan)
         {
             var dt = bll.GetOrderDetails(maBan);
             dgvOrder.DataSource = dt;
 
-            // Tính tổng tiền
             decimal tong = 0;
             if (dt != null && dt.Rows.Count > 0)
             {
-                foreach (System.Data.DataRow row in dt.Rows)
-                {
-                    tong += Convert.ToDecimal(row["ThanhTien"]);
-                }
+                foreach (System.Data.DataRow row in dt.Rows) tong += Convert.ToDecimal(row["ThanhTien"]);
+                btnThanhToan.Enabled = true;
             }
-            lblTongTien.Text = $"Tổng tiền: {tong.ToString("N0")} VNĐ";
+            else
+            {
+                btnThanhToan.Enabled = false; // Không có món -> Khóa thanh toán
+            }
+            lblTongTien.Text = $"{tong:N0} VNĐ";
 
-            // Đổi tên cột hiển thị cho đẹp
+            // Format cột
             if (dgvOrder.Columns["TenMonAn"] != null) dgvOrder.Columns["TenMonAn"].HeaderText = "Tên món";
-            if (dgvOrder.Columns["SoLuong"] != null) dgvOrder.Columns["SoLuong"].HeaderText = "SL";
             if (dgvOrder.Columns["ThanhTien"] != null) dgvOrder.Columns["ThanhTien"].HeaderText = "Thành tiền";
         }
 
-        // --- SỰ KIỆN: GỌI MÓN ---
+        // --- 4. CÁC SỰ KIỆN NÚT BẤM ---
+
         private void BtnGoiMon_Click(object sender, EventArgs e)
         {
-            if (selectedBanID == null)
+            if (selectedBanID == null) return;
+
+            // Kiểm tra Rule 2h trước khi cho phép ngồi vào bàn
+            string reason;
+            if (!bll.CanSitAtTable(selectedBanID, out reason))
             {
-                MessageBox.Show("Vui lòng chọn bàn trước!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(reason, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // Ở đây đơn giản hóa: Dùng InputBox để nhập món demo
-            // Thực tế bạn cần hiển thị danh sách thực đơn (ucThucDon) để chọn
-            // Đây là code test nhanh chức năng gọi món:
-            string maMon = Microsoft.VisualBasic.Interaction.InputBox("Nhập Mã Món (VD: MA-001):", "Gọi món", "MA-001");
-            string soLuong = Microsoft.VisualBasic.Interaction.InputBox("Nhập Số lượng:", "Gọi món", "1");
+            // Gọi món demo
+            string maMon = Microsoft.VisualBasic.Interaction.InputBox("Nhập mã món (VD: MA01):", "Gọi món", "MA01");
+            string sl = Microsoft.VisualBasic.Interaction.InputBox("Số lượng:", "Gọi món", "1");
 
-            if (!string.IsNullOrEmpty(maMon) && int.TryParse(soLuong, out int sl))
+            if (!string.IsNullOrEmpty(maMon) && int.TryParse(sl, out int iSL))
             {
-                string ketQua = bll.OrderMon(selectedBanID, maMon, sl);
-                MessageBox.Show(ketQua);
-
-                LoadOrder(selectedBanID); // Load lại list món
-                LoadBan(); // Load lại màu bàn (nếu từ Trống -> Có khách)
+                MessageBox.Show(bll.OrderMon(selectedBanID, maMon, iSL));
+                LoadBan(txtTimKiem.Text); // Cập nhật màu bàn
+                LoadOrder(selectedBanID);
             }
         }
 
-        // --- SỰ KIỆN: THANH TOÁN ---
         private void BtnThanhToan_Click(object sender, EventArgs e)
         {
             if (selectedBanID == null) return;
 
-            // Lấy tổng tiền từ Label (cắt chuỗi để lấy số)
-            string strTien = lblTongTien.Text.Replace("Tổng tiền: ", "").Replace(" VNĐ", "").Replace(".", "").Replace(",", "");
-            if (decimal.TryParse(strTien, out decimal tongTien) && tongTien > 0)
+            if (MessageBox.Show("Xác nhận thanh toán?", "Xác nhận", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
-                DialogResult dr = MessageBox.Show($"Xác nhận thanh toán bàn {selectedBanID}?\nTổng tiền: {tongTien:N0} VNĐ",
-                    "Thanh toán", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                decimal tong = decimal.Parse(lblTongTien.Text.Replace(" VNĐ", "").Replace(".", "").Replace(",", ""));
 
-                if (dr == DialogResult.Yes)
+                if (bll.Checkout(selectedBanID, tong))
                 {
-                    bool result = bll.Checkout(selectedBanID, tongTien);
-                    if (result)
-                    {
-                        MessageBox.Show("Thanh toán thành công!");
-                        LoadBan(); // Refresh lại bàn về màu xám
-                        LoadOrder(selectedBanID); // Xóa grid order
-                    }
-                    else
-                    {
-                        MessageBox.Show("Thanh toán thất bại!");
-                    }
+                    MessageBox.Show("Thanh toán thành công. Bàn đã TRỐNG.");
+                    LoadBan(txtTimKiem.Text);
+                    LoadOrder(selectedBanID);
                 }
-            }
-            else
-            {
-                MessageBox.Show("Bàn này chưa có món nào hoặc lỗi tính tiền!");
             }
         }
 
-        void AuthorizeActions()
+        void ShowBookingForm(string maBan)
         {
-            string role = currentUser.VaiTro;
+            string ngayStr = Microsoft.VisualBasic.Interaction.InputBox("Ngày đặt (yyyy-MM-dd):", "Đặt lịch", DateTime.Now.AddDays(1).ToString("yyyy-MM-dd"));
+            string gioStr = Microsoft.VisualBasic.Interaction.InputBox("Giờ đến (HH:mm):", "Đặt lịch", "18:00");
 
-            // Tìm các nút trong giao diện (đã khai báo biến toàn cục ở bài trước)
-            // btnThanhToan, btnGoiMon
-
-            if (role == "Phục vụ")
+            if (DateTime.TryParse(ngayStr, out DateTime ngay) && TimeSpan.TryParse(gioStr, out TimeSpan gioDen))
             {
-                // Phục vụ: Chỉ CRUD Order, không thanh toán
-                // btnThanhToan (nếu đã tạo biến global)
-                // Lưu ý: Cần chuyển biến btnThanhToan thành biến toàn cục (private Button btnThanhToan;)
+                TimeSpan gioDi = gioDen.Add(TimeSpan.FromHours(2)); // Mặc định dùng 2 tiếng
 
-                // Giả sử bạn đã promote biến btnThanhToan ra ngoài hàm SetupManualUI
-                if (btnThanhToan != null) btnThanhToan.Enabled = false;
+                // Gọi BLL kiểm tra Rule 1 ngày và Trùng lịch
+                string msg = bll.BookTableAdvanced(maBan, "Khách A", "090...", ngay, gioDen, gioDi);
+                MessageBox.Show(msg);
             }
-
-            if (role == "Thu ngân")
-            {
-                // Thu ngân: Được thanh toán, được xem bàn
-                // Nhưng có thể không được sửa món (tùy nghiệp vụ, ở đây đề bài cho phép Full Bàn)
-            }
+            else MessageBox.Show("Định dạng ngày giờ không hợp lệ!");
         }
 
-        // 2. Hàm tạo Menu chuột phải
-        void InitContextMenu()
-        {
-            ctxMenuBan = new ContextMenuStrip();
-
-            ToolStripMenuItem itemSua = new ToolStripMenuItem("Sửa tên bàn");
-            itemSua.Click += (s, e) => {
-                string newName = Microsoft.VisualBasic.Interaction.InputBox("Nhập tên mới:", "Sửa bàn", "");
-                if (!string.IsNullOrEmpty(newName))
-                {
-                    MessageBox.Show(bll.UpdateTable(contextBanID, newName, "Thường"));
-                    LoadBan();
-                }
-            };
-
-            ToolStripMenuItem itemXoa = new ToolStripMenuItem("Xóa bàn này");
-            itemXoa.Click += (s, e) => {
-                if (MessageBox.Show("Chắc chắn xóa?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                {
-                    MessageBox.Show(bll.DeleteTable(contextBanID));
-                    LoadBan();
-                }
-            };
-
-            ToolStripMenuItem itemDatBan = new ToolStripMenuItem("Đặt bàn này");
-            itemDatBan.Click += (s, e) => {
-                // Mở form đặt bàn (hoặc InputBox đơn giản demo)
-                string khach = Microsoft.VisualBasic.Interaction.InputBox("Tên khách đặt:", "Booking", "");
-                if (!string.IsNullOrEmpty(khach))
-                {
-                    MessageBox.Show(bll.BookTable(contextBanID, khach, "090...", DateTime.Now.AddHours(2)));
-                    // Logic đổi màu bàn sang Xanh Dương cần update trong LoadBan dựa vào bảng DatBan
-                }
-            };
-
-            ctxMenuBan.Items.Add(itemDatBan);
-            ctxMenuBan.Items.Add(new ToolStripSeparator());
-            ctxMenuBan.Items.Add(itemSua);
-            ctxMenuBan.Items.Add(itemXoa);
-        }
-
+        // --- 5. PHÂN QUYỀN ---
         void ApplyPermission()
         {
-            string role = currentUser.VaiTro;
-
-            // Yêu cầu: Phục vụ chỉ được truy cập chức năng CRUD order, thu ngân được thanh toán
-            if (role == "Phục vụ")
+            // Nếu là Phục vụ -> Khóa nút thanh toán (dù bàn có khách)
+            if (currentUser.VaiTro == "Phục vụ")
             {
-                // Ẩn hoặc Vô hiệu hóa nút Thanh toán
-                if (btnThanhToan != null)
-                {
-                    btnThanhToan.Enabled = false;
-                    btnThanhToan.BackColor = Color.Gray;
-                    btnThanhToan.Text = "Không có quyền";
-                }
-
-                // Nút Gọi món (CRUD Order) vẫn Enabled (Mặc định)
+                if (btnThanhToan != null) btnThanhToan.Enabled = false;
             }
-
-            // Thu ngân và Quản lý: Full quyền trong màn hình này
         }
     }
 }

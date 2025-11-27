@@ -33,3 +33,4 @@ C:\Users\LOC\source\repos\Software\NhaHang\GUI\obj\Debug\net8.0-windows\GUI.genr
 C:\Users\LOC\source\repos\Software\NhaHang\GUI\obj\Debug\net8.0-windows\ref\GUI.dll
 C:\Users\LOC\source\repos\Software\NhaHang\GUI\obj\Debug\net8.0-windows\GUI.ucThucDon.resources
 C:\Users\LOC\source\repos\Software\NhaHang\GUI\obj\Debug\net8.0-windows\GUI.ucKho.resources
+C:\Users\LOC\source\repos\Software\NhaHang\GUI\obj\Debug\net8.0-windows\GUI.ucTableItem.resources
