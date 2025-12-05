@@ -1,6 +1,6 @@
 ﻿namespace GUI
 {
-    partial class frmLogin
+    partial class frmDangNhap
     {
         /// <summary>
         /// Required designer variable.
@@ -28,44 +28,60 @@
         /// </summary>
         private void InitializeComponent()
         {
-            pnlCard = new Panel();
-            lblQuenMatKhau = new Label();
-            btnXacNhan = new Button();
-            txtMatKhau = new TextBox();
+            lblDangNhap = new Label();
+            lblTenDN = new Label();
+            txtTenDN = new TextBox();
             lblMK = new Label();
-            txtMaNV = new TextBox();
-            lblMaNV = new Label();
-            lblTitle = new Label();
-            btnThoat = new Button();
-            pnlCard.SuspendLayout();
+            txtMK = new TextBox();
+            btnXacNhan = new Button();
+            lblQuenMK = new Label();
             SuspendLayout();
             // 
-            // pnlCard
+            // lblDangNhap
             // 
-            pnlCard.BackColor = Color.White;
-            pnlCard.Controls.Add(lblQuenMatKhau);
-            pnlCard.Controls.Add(btnXacNhan);
-            pnlCard.Controls.Add(txtMatKhau);
-            pnlCard.Controls.Add(lblMK);
-            pnlCard.Controls.Add(txtMaNV);
-            pnlCard.Controls.Add(lblMaNV);
-            pnlCard.Controls.Add(lblTitle);
-            pnlCard.Location = new Point(121, 12);
-            pnlCard.Name = "pnlCard";
-            pnlCard.Size = new Size(450, 300);
-            pnlCard.TabIndex = 0;
+            lblDangNhap.Dock = DockStyle.Top;
+            lblDangNhap.Font = new Font("Times New Roman", 12.75F, FontStyle.Bold, GraphicsUnit.Point, 163);
+            lblDangNhap.ForeColor = Color.Black;
+            lblDangNhap.Location = new Point(0, 0);
+            lblDangNhap.Name = "lblDangNhap";
+            lblDangNhap.Size = new Size(300, 50);
+            lblDangNhap.TabIndex = 0;
+            lblDangNhap.Text = "ĐĂNG NHẬP";
+            lblDangNhap.TextAlign = ContentAlignment.MiddleCenter;
             // 
-            // lblQuenMatKhau
+            // lblTenDN
             // 
-            lblQuenMatKhau.AutoSize = true;
-            lblQuenMatKhau.Cursor = Cursors.Hand;
-            lblQuenMatKhau.ForeColor = Color.Blue;
-            lblQuenMatKhau.Location = new Point(160, 200);
-            lblQuenMatKhau.Name = "lblQuenMatKhau";
-            lblQuenMatKhau.Size = new Size(94, 15);
-            lblQuenMatKhau.TabIndex = 6;
-            lblQuenMatKhau.Text = "Quên mật khẩu?";
-            lblQuenMatKhau.Click += label1_Click;
+            lblTenDN.AutoSize = true;
+            lblTenDN.Location = new Point(12, 56);
+            lblTenDN.Name = "lblTenDN";
+            lblTenDN.Size = new Size(86, 15);
+            lblTenDN.TabIndex = 1;
+            lblTenDN.Text = "Tên đăng nhập";
+            // 
+            // txtTenDN
+            // 
+            txtTenDN.Location = new Point(104, 53);
+            txtTenDN.Name = "txtTenDN";
+            txtTenDN.Size = new Size(184, 23);
+            txtTenDN.TabIndex = 2;
+            // 
+            // lblMK
+            // 
+            lblMK.AutoSize = true;
+            lblMK.Location = new Point(12, 85);
+            lblMK.Name = "lblMK";
+            lblMK.Size = new Size(57, 15);
+            lblMK.TabIndex = 3;
+            lblMK.Text = "Mật khẩu";
+            // 
+            // txtMK
+            // 
+            txtMK.Location = new Point(104, 82);
+            txtMK.Name = "txtMK";
+            txtMK.PasswordChar = '*';
+            txtMK.Size = new Size(184, 23);
+            txtMK.TabIndex = 4;
+            txtMK.KeyDown += txtMatKhau_KeyDown;
             // 
             // btnXacNhan
             // 
@@ -73,97 +89,56 @@
             btnXacNhan.FlatAppearance.BorderSize = 0;
             btnXacNhan.FlatStyle = FlatStyle.Flat;
             btnXacNhan.ForeColor = Color.White;
-            btnXacNhan.Location = new Point(160, 157);
+            btnXacNhan.Location = new Point(12, 111);
             btnXacNhan.Name = "btnXacNhan";
-            btnXacNhan.Size = new Size(120, 40);
+            btnXacNhan.Size = new Size(276, 40);
             btnXacNhan.TabIndex = 5;
             btnXacNhan.Text = "Xác nhận";
             btnXacNhan.UseVisualStyleBackColor = false;
             btnXacNhan.Click += btnXacNhan_Click;
             // 
-            // txtMatKhau
+            // lblQuenMK
             // 
-            txtMatKhau.Location = new Point(160, 128);
-            txtMatKhau.Name = "txtMatKhau";
-            txtMatKhau.PasswordChar = '●';
-            txtMatKhau.Size = new Size(200, 23);
-            txtMatKhau.TabIndex = 4;
+            lblQuenMK.Cursor = Cursors.Hand;
+            lblQuenMK.Dock = DockStyle.Bottom;
+            lblQuenMK.Font = new Font("Times New Roman", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 163);
+            lblQuenMK.ForeColor = Color.Blue;
+            lblQuenMK.Location = new Point(0, 160);
+            lblQuenMK.Name = "lblQuenMK";
+            lblQuenMK.Size = new Size(300, 15);
+            lblQuenMK.TabIndex = 6;
+            lblQuenMK.Text = "Quên mật khẩu";
+            lblQuenMK.TextAlign = ContentAlignment.MiddleCenter;
+            lblQuenMK.Click += lblQuenMatKhau_Click;
             // 
-            // lblMK
-            // 
-            lblMK.AutoSize = true;
-            lblMK.Location = new Point(50, 130);
-            lblMK.Name = "lblMK";
-            lblMK.Size = new Size(60, 15);
-            lblMK.TabIndex = 3;
-            lblMK.Text = "Mật khẩu:";
-            // 
-            // txtMaNV
-            // 
-            txtMaNV.Location = new Point(160, 78);
-            txtMaNV.Name = "txtMaNV";
-            txtMaNV.Size = new Size(200, 23);
-            txtMaNV.TabIndex = 2;
-            // 
-            // lblMaNV
-            // 
-            lblMaNV.AutoSize = true;
-            lblMaNV.Location = new Point(50, 80);
-            lblMaNV.Name = "lblMaNV";
-            lblMaNV.Size = new Size(82, 15);
-            lblMaNV.TabIndex = 1;
-            lblMaNV.Text = "Mã nhân viên:";
-            // 
-            // lblTitle
-            // 
-            lblTitle.Dock = DockStyle.Top;
-            lblTitle.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 163);
-            lblTitle.ForeColor = Color.DimGray;
-            lblTitle.Location = new Point(0, 0);
-            lblTitle.Name = "lblTitle";
-            lblTitle.Size = new Size(450, 60);
-            lblTitle.TabIndex = 0;
-            lblTitle.Text = "NHẬP TÀI KHOẢN NHÂN VIÊN THU NGÂN";
-            lblTitle.TextAlign = ContentAlignment.MiddleCenter;
-            // 
-            // btnThoat
-            // 
-            btnThoat.BackColor = Color.Red;
-            btnThoat.Location = new Point(613, 12);
-            btnThoat.Name = "btnThoat";
-            btnThoat.Size = new Size(75, 23);
-            btnThoat.TabIndex = 1;
-            btnThoat.Text = "X";
-            btnThoat.UseVisualStyleBackColor = false;
-            btnThoat.Click += btnThoat_Click;
-            // 
-            // frmLogin
+            // frmDangNhap
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            BackColor = SystemColors.ControlLight;
-            ClientSize = new Size(700, 500);
-            Controls.Add(btnThoat);
-            Controls.Add(pnlCard);
-            FormBorderStyle = FormBorderStyle.None;
-            Name = "frmLogin";
+            BackColor = Color.White;
+            ClientSize = new Size(300, 175);
+            Controls.Add(lblQuenMK);
+            Controls.Add(btnXacNhan);
+            Controls.Add(lblDangNhap);
+            Controls.Add(lblMK);
+            Controls.Add(txtMK);
+            Controls.Add(lblTenDN);
+            Controls.Add(txtTenDN);
+            FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            Name = "frmDangNhap";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "frmLogin";
-            pnlCard.ResumeLayout(false);
-            pnlCard.PerformLayout();
+            Text = "Đăng nhập";
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
-
-        private Panel pnlCard;
-        private Label lblTitle;
-        private Label lblMaNV;
-        private Button btnXacNhan;
-        private TextBox txtMatKhau;
+        private Label lblDangNhap;
+        private Label lblTenDN;
+        private TextBox txtTenDN;
         private Label lblMK;
-        private TextBox txtMaNV;
-        private Button btnThoat;
-        private Label lblQuenMatKhau;
+        private TextBox txtMK;
+        private Button btnXacNhan;
+        private Label lblQuenMK;
     }
 }

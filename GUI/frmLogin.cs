@@ -1,102 +1,89 @@
-﻿using BLL; // Gọi lớp nghiệp vụ
-using DTO; // Gọi lớp dữ liệu
+﻿using BLL;
+using DTO;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
 
 namespace GUI
 {
-    public partial class frmLogin : Form
+    public partial class frmDangNhap : Form
     {
-        // Khởi tạo lớp xử lý nghiệp vụ
-        ServiceBLL bll = new ServiceBLL();
-
-        public frmLogin()
+        public frmDangNhap()
         {
             InitializeComponent();
-            SetupCustomUI();
         }
 
-        // Hàm này để căn giữa khung trắng (pnlCard) mỗi khi mở form
-        private void SetupCustomUI()
-        {
-            // Căn giữa Panel Card
-            pnlCard.Location = new Point(
-                (this.Width - pnlCard.Width) / 2,
-                (this.Height - pnlCard.Height) / 2
-            );
+        ServiceBLL bll = new ServiceBLL();
 
-            // Bo tròn góc cho Button (Nếu muốn đẹp hơn) - Tùy chọn
-            // btnXacNhan.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnXacNhan.Width, btnXacNhan.Height, 10, 10));
-        }
-
-        // Sự kiện click nút Xác Nhận
         private void btnXacNhan_Click(object sender, EventArgs e)
         {
-            string u = txtMaNV.Text.Trim();
-            string p = txtMatKhau.Text.Trim();
+            string tenDN = txtTenDN.Text.Trim();
+            string mk = txtMK.Text.Trim();
 
-            if (string.IsNullOrEmpty(u) || string.IsNullOrEmpty(p))
+            if (string.IsNullOrEmpty(tenDN) || string.IsNullOrEmpty(mk))
             {
                 MessageBox.Show("Vui lòng nhập đầy đủ thông tin.");
                 return;
             }
 
             NguoiDungDTO user;
-            var result = bll.LoginAdvanced(u, p, out user);
-
-            // ... bên trong btnXacNhan_Click ...
+            var result = bll.LoginAdvanced(tenDN, mk, out user);
 
             switch (result)
             {
                 case LoginResult.Success:
                     frmMain f = new frmMain(user);
                     this.Hide();
-                    f.ShowDialog();
-                    this.Close();
+                    DialogResult dr = f.ShowDialog();
+
+                    // Kiểm tra xem form Main đóng vì lý do gì?
+                    if (dr == DialogResult.OK)
+                    {
+                        // Nếu là do bấm nút Đăng xuất (DialogResult.OK) -> Hiện lại Login
+                        this.Show();
+                        txtMK.Text = ""; // Xóa mật khẩu cũ
+                        txtTenDN.Focus();
+                    }
+                    else
+                    {
+                        // Nếu đóng bằng nút X hoặc Alt+F4 -> Thoát luôn ứng dụng
+                        this.Close();
+                    }
                     break;
 
                 case LoginResult.InvalidCredentials:
-                    ShowError("Mật khẩu không đúng! \nLưu ý: Nhập sai 3 lần tài khoản sẽ bị KHÓA.");
-                    txtMatKhau.Clear();
-                    txtMatKhau.Focus();
+                    ShowError("Mật khẩu không đúng!\nLưu ý: Nhập sai 3 lần tài khoản sẽ bị KHÓA.");
+                    txtMK.Focus();
                     break;
 
                 case LoginResult.Locked:
-                    ShowError("Tài khoản này đã bị KHÓA do vi phạm bảo mật.\nVui lòng liên hệ Quản lý để mở khóa.");
+                    ShowError("Tài khoản này đã bị KHÓA do vi phạm bảo mật\nVui lòng liên hệ Quản lý để mở khóa.");
                     break;
 
                 case LoginResult.CustomerDenied:
                     ShowWarning("Tài khoản Khách hàng chỉ dùng cho đặt bàn Online/App.\nKhông thể truy cập hệ thống quản lý.");
+                    txtTenDN.Focus();
                     break;
 
                 case LoginResult.UserNotFound:
                     ShowError("Tài khoản không tồn tại trong hệ thống.");
-                    txtMaNV.Focus();
+                    txtTenDN.Focus();
                     break;
             }
         }
 
-        // Thêm một Label "lblQuenMatKhau" vào form Login và gán sự kiện này
         private void lblQuenMatKhau_Click(object sender, EventArgs e)
         {
-            string user = txtMaNV.Text.Trim();
+            string user = txtTenDN.Text.Trim();
             if (string.IsNullOrEmpty(user))
             {
-                MessageBox.Show("Vui lòng nhập Tên đăng nhập vào ô mã nhân viên để lấy lại mật khẩu.");
+                MessageBox.Show("Vui lòng nhập Tên đăng nhập vào để lấy lại mật khẩu.");
                 return;
             }
             string msg = bll.ForgotPassword(user);
             MessageBox.Show(msg);
         }
 
-        // Sự kiện nút Thoát (X)
-        private void btnThoat_Click(object sender, EventArgs e)
-        {
-            Application.Exit();
-        }
-
-        // Sự kiện nhấn Enter thì tự động bấm nút Xác Nhận (UX tốt hơn)
         private void txtMatKhau_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -105,27 +92,11 @@ namespace GUI
             }
         }
 
-        private void label1_Click(object sender, EventArgs e)
-        {
-            string user = txtMaNV.Text.Trim();
-            if (string.IsNullOrEmpty(user))
-            {
-                MessageBox.Show("Vui lòng nhập Tên đăng nhập vào ô mã nhân viên để lấy lại mật khẩu.");
-                return;
-            }
-            string msg = bll.ForgotPassword(user);
-            MessageBox.Show(msg);
-        }
-
-        // --- CÁC HÀM HỖ TRỢ HIỂN THỊ THÔNG BÁO ---
-
-        // Hàm hiển thị lỗi (Icon X đỏ)
         private void ShowError(string msg)
         {
             MessageBox.Show(msg, "Lỗi đăng nhập", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        // Hàm hiển thị cảnh báo (Icon tam giác vàng)
         private void ShowWarning(string msg)
         {
             MessageBox.Show(msg, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);

@@ -7,20 +7,19 @@
     <Compile Update="frmMain.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="ucBanHang.cs">
+    <Compile Update="ucBan.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Update="ucKho.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Update="ucNhanSu.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Update="ucTableItem.cs">
+    <Compile Update="ucNhanVien.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Update="ucThucDon.cs">
       <SubType>UserControl</SubType>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>
