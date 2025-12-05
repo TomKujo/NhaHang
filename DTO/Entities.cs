@@ -2,7 +2,6 @@
 
 namespace DTO
 {
-    // 1. Bảng Người Dùng (Chứa thông tin đăng nhập chung)
     public class NguoiDungDTO
     {
         public string MaNguoiDung { get; set; }
@@ -13,174 +12,149 @@ namespace DTO
         public int SoLanSai { get; set; }
     }
 
-    // 2. Bảng Khách Hàng
     public class KhachHangDTO
     {
-        public string MaKH { get; set; } // FK liên kết với MaNguoiDung
-        public string HoVaTen { get; set; }
+        public string MaKH { get; set; }
+        public string Ten { get; set; }
         public string SDT { get; set; }
         public string Email { get; set; }
         public int DiemTichLuy { get; set; }
     }
 
-    // 3. Bảng Quản Lý
+    public class NhanVienDTO
+    {
+        public string MaNV { get; set; }
+        public string Ten { get; set; }
+        public string DiaChi { get; set; }
+        public string SDT { get; set; }
+
+        // Thuộc tính phụ (không có trong bảng NhanVien, lấy từ NguoiDung)
+        public string TrangThaiTK { get; set; }
+    }
+
     public class QuanLyDTO
     {
-        public string MaQL { get; set; } // FK liên kết với MaNguoiDung
-        public string TenQL { get; set; }
-        public string DiaChi { get; set; }
+        public string MaQL { get; set; }
+        public string Ten { get; set; }
         public string SDT { get; set; }
     }
 
-    // 4. Bảng Bàn
     public class BanDTO
     {
         public string MaBan { get; set; }
-        public string Loai { get; set; }      // 'VIP', 'Thường', 'Gia đình'
-        public string TenBan { get; set; }
-        public string TrangThai { get; set; } // 'Trống', 'Có khách'
+        public string Loai { get; set; }
+        public string Ten { get; set; }
         public decimal TienCoc { get; set; }
+        public string TrangThai { get; set; }
     }
 
-    // 5. Bảng Đặt Bàn
     public class DatBanDTO
     {
         public string MaDatBan { get; set; }
         public string MaKH { get; set; }
         public string MaBan { get; set; }
-        public TimeSpan GioDen { get; set; }  // Kiểu TIME trong SQL -> TimeSpan trong C#
-        public TimeSpan GioDi { get; set; }
-        public DateTime NgayDat { get; set; }
-        public string TrangThai { get; set; } // 'Chờ phản hồi', 'Đã cọc', 'Hủy'
+        public DateTime ThoiGian { get; set; }
+        public string TrangThai { get; set; }
+
+        // Thuộc tính hiển thị (Helper)
+        public string TenKhachHang { get; set; }
+        public string SDT { get; set; }
     }
 
-    // 6. Bảng Thực Đơn (Nhóm món ăn)
     public class ThucDonDTO
     {
         public string MaThucDon { get; set; }
-        public string TenThucDon { get; set; }
+        public string Ten { get; set; }
         public string MoTa { get; set; }
     }
 
-    // 7. Bảng Món Ăn
-    public class MonAnDTO
+    public class MonDTO
     {
-        public string MaMonAn { get; set; }
+        public string MaMon { get; set; }
         public string MaThucDon { get; set; }
-        public string TenMonAn { get; set; }
+        public string Ten { get; set; }
         public decimal Gia { get; set; }
-        public int DiemThuong { get; set; }
+        public int DiemTichLuy { get; set; }
     }
 
-    // 8. Bảng Voucher
-    public class VoucherDTO
-    {
-        public string MaVoucher { get; set; }
-        public string MaMonAn { get; set; }
-        public string MoTa { get; set; }
-        public string LoaiGiamGia { get; set; } // 'Phần trăm', 'Trừ thẳng'
-        public DateTime HanSuDung { get; set; }
-    }
-
-    // 9. Bảng Khách Hàng sở hữu Voucher
-    public class KH_VoucherDTO
-    {
-        public string MaKH { get; set; }
-        public string MaVoucher { get; set; }
-        public int SoLuong { get; set; }
-        public DateTime NgayNhan { get; set; }
-        public string TrangThai { get; set; } // 'Còn hạn', 'Đã dùng', 'Hết hạn'
-    }
-
-    // 10. Bảng Hóa Đơn
     public class HoaDonDTO
     {
-        public string MaHoaDon { get; set; }
+        public string MaHD { get; set; }
         public string MaBan { get; set; }
-        public string MaVoucher { get; set; } // Có thể null
         public string MaKH { get; set; }
         public DateTime ThoiGianLap { get; set; }
-        public string MoTa { get; set; }
-        public decimal ThanhTien { get; set; }
-        public decimal TienGiam { get; set; }
         public decimal TongTien { get; set; }
-        public string TrangThai { get; set; } // 'Đã thanh toán', 'Chưa thanh toán', 'Hủy'
-        public string ThanhToan { get; set; } // 'Tiền mặt', 'Chuyển khoản'
+        public string TrangThai { get; set; }
+        public string HinhThucThanhToan { get; set; }
     }
 
-    // 11. Bảng Chi Tiết Hóa Đơn
-    public class ChiTietHoaDonDTO
+    public class ChiTietHDDTO
     {
-        public string MaHoaDon { get; set; }
-        public string MaMonAn { get; set; }
+        public int ID { get; set; }
+        public string MaHD { get; set; }
+        public string MaMon { get; set; }
         public int SoLuong { get; set; }
-        public decimal ThanhTien { get; set; }
+        public decimal DonGia { get; set; }
+        public string GhiChu { get; set; }
 
-        // Thuộc tính phụ để hiển thị lên lưới (Grid)
-        public string TenMonAn { get; set; }
+        // Thuộc tính hiển thị (Helper)
+        public string TenMon { get; set; }
     }
 
-    // 12. Bảng Thực Phẩm (Nguyên liệu kho)
-    public class ThucPhamDTO
+    public class NguyenLieuDTO
     {
-        public string MaThucPham { get; set; }
-        public string TenTP { get; set; }
-        public int SoLuongTonKho { get; set; }
-        public string DonViTinh { get; set; }
+        public string MaNguyenLieu { get; set; }
+        public string Ten { get; set; }
+        public decimal SoLuongTon { get; set; }
+        public string DonVi { get; set; }
     }
 
-    // 13. Bảng Công Thức (Định lượng món ăn)
     public class CongThucDTO
     {
-        public string MaMonAn { get; set; }
-        public string MaThucPham { get; set; }
-        public decimal SoLuong { get; set; } // Số lượng nguyên liệu cần cho 1 món
+        public string MaMon { get; set; }
+        public string MaNguyenLieu { get; set; }
+        public decimal LuongTieuHao { get; set; }
+
+        // Thuộc tính hiển thị (Helper)
+        public string TenNguyenLieu { get; set; }
+        public string DonVi { get; set; }
     }
 
-    // 14. Bảng Nhà Cung Cấp
     public class NhaCungCapDTO
     {
         public string MaNCC { get; set; }
-        public string TenNCC { get; set; }
+        public string Ten { get; set; }
         public string DiaChi { get; set; }
         public string SDT { get; set; }
     }
 
-    // 15. Bảng Nhân Viên
-    public class NhanVienDTO
-    {
-        public string MaNV { get; set; }
-        public string TenNV { get; set; }
-        public string DiaChi { get; set; }
-        public string SDT { get; set; }
-    }
-
-    // 16. Bảng Phiếu Nhập Hàng
     public class PhieuNhapHangDTO
     {
-        public string MaPNH { get; set; }
+        public string MaPhieu { get; set; }
         public string MaNCC { get; set; }
-        public string MaNguoiNhap { get; set; } // FK tới NguoiDung
-        public string TinhTrang { get; set; }
-        public DateTime NgayNhapHang { get; set; }
+        public string MaNV { get; set; }
+        public DateTime ThoiGian { get; set; }
         public decimal TongTien { get; set; }
+
+        // Đã xóa 'TinhTrang' vì bảng PhieuNhapHang trong SQL không có cột này
+
+        // Thuộc tính hiển thị (Helper)
+        public string TenNCC { get; set; }
+        public string TenNV { get; set; }
     }
 
-    // 17. Bảng Chi Tiết Nhập Hàng
-    public class ChiTietNhapHangDTO
+    public class ChiTietNhapDTO
     {
-        public string MaPNH { get; set; }
-        public string MaThucPham { get; set; }
-        public int SoLuong { get; set; }
-        public decimal TongTien { get; set; }
-    }
+        public string MaPhieu { get; set; }
+        public string MaNguyenLieu { get; set; }
 
-    public class CartItemDTO
-    {
-        public string MaThucPham { get; set; }
-        public string TenTP { get; set; }
-        public int SoLuong { get; set; }
+        // Cập nhật theo SQL: Thay 'SoLuong' bằng các trường chi tiết
+        public decimal LuongYeuCau { get; set; }
+        public decimal LuongThucTe { get; set; }
         public decimal DonGia { get; set; }
-        public decimal ThanhTien => SoLuong * DonGia;
+        public string TinhTrang { get; set; } // SQL: NVARCHAR(10) DEFAULT N'Đủ'
+
+        // Thuộc tính hiển thị (Helper)
+        public string TenNguyenLieu { get; set; }
     }
 }
