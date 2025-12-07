@@ -1,0 +1,11 @@
+C:\Users\LOC\source\repos\Software\NhaHang\DTO\bin\Debug\net8.0\DTO.deps.json
+C:\Users\LOC\source\repos\Software\NhaHang\DTO\bin\Debug\net8.0\DTO.dll
+C:\Users\LOC\source\repos\Software\NhaHang\DTO\bin\Debug\net8.0\DTO.pdb
+C:\Users\LOC\source\repos\Software\NhaHang\DTO\obj\Debug\net8.0\DTO.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\LOC\source\repos\Software\NhaHang\DTO\obj\Debug\net8.0\DTO.AssemblyInfoInputs.cache
+C:\Users\LOC\source\repos\Software\NhaHang\DTO\obj\Debug\net8.0\DTO.AssemblyInfo.cs
+C:\Users\LOC\source\repos\Software\NhaHang\DTO\obj\Debug\net8.0\DTO.csproj.CoreCompileInputs.cache
+C:\Users\LOC\source\repos\Software\NhaHang\DTO\obj\Debug\net8.0\DTO.dll
+C:\Users\LOC\source\repos\Software\NhaHang\DTO\obj\Debug\net8.0\refint\DTO.dll
+C:\Users\LOC\source\repos\Software\NhaHang\DTO\obj\Debug\net8.0\DTO.pdb
+C:\Users\LOC\source\repos\Software\NhaHang\DTO\obj\Debug\net8.0\ref\DTO.dll
