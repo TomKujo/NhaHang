@@ -6,8 +6,6 @@ namespace DAL
 {
     public class DBHelper
     {
-        // Connection String
-        // Lưu ý: Đảm bảo Data Source khớp với máy tính của bạn
         private static string strConn = "Data Source=MSI\\SQLEXPRESS;Initial Catalog=NhaHang;Integrated Security=True;Encrypt=False";
 
         public static SqlConnection GetConnection()

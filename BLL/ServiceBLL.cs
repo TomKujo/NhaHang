@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 
 namespace BLL
 {
@@ -29,16 +31,10 @@ namespace BLL
             NguoiDungDTO user = dal.GetUserByUsername(username);
 
             if (user == null) return LoginResult.UserNotFound;
-
-            // YÊU CẦU: TÀI KHOẢN KHÁCH KHÔNG THỂ ĐĂNG NHẬP VÀO HỆ THỐNG QUẢN TRỊ
             if (user.VaiTro == "Khách hàng") return LoginResult.CustomerDenied;
-
             if (user.TrangThai == "Khóa") return LoginResult.Locked;
-
-            // Kiểm tra mật khẩu
             if (user.MatKhau == password)
             {
-                // Reset số lần sai về 0
                 dal.UpdateLoginFail(username, 0);
                 userOut = user;
                 return LoginResult.Success;
@@ -88,7 +84,6 @@ namespace BLL
                 if (user.SoLanSai + 1 >= 3) dal.LockAccount(u);
                 return "Sai mật khẩu!";
             }
-            // Reset số lần sai
             dal.UpdateLoginFail(u, 0);
             return "OK";
         }
@@ -101,8 +96,6 @@ namespace BLL
         public string AddTable(string t, string l) => dal.ThemBan(t, l) ? "OK" : "Fail";
         public string UpdateTable(string m, string t, string l) => dal.SuaBan(m, t, l) ? "Sửa thành công" : "Lỗi sửa bàn";
         public string DeleteTable(string m) => dal.XoaBan(m) ? "Xóa thành công" : "Không thể xóa bàn đang có khách/đặt trước!";
-
-        // Update status bàn thủ công
         public string UpdateTableState(string maBan, string state)
         {
             dal.UpdateTableStatus(maBan, state);
@@ -116,14 +109,7 @@ namespace BLL
 
             if (dal.CheckTrungLich(maBan, thoiGian)) return "Lỗi: Khung giờ này đã có người đặt!";
 
-            // Kiểm tra hoặc tạo khách hàng (logic đơn giản hóa cho Advanced)
-            string maKH = dal.GetKhachHangBySDT(sdt);
-            if (string.IsNullOrEmpty(maKH))
-            {
-                maKH = dal.InsertKhachHang(tenKhach, sdt);
-            }
-
-            return dal.InsertDatBan(maBan, maKH, thoiGian) ? "Đặt bàn thành công!" : "Lỗi hệ thống.";
+            return dal.InsertDatBan(maBan, tenKhach, sdt, thoiGian) ? "Đặt bàn thành công!" : "Lỗi hệ thống.";
         }
 
         public string BookTableSmart(string maBan, string tenKhach, string sdt, DateTime thoiGian)
@@ -132,15 +118,7 @@ namespace BLL
 
             if (dal.CheckTrungLich(maBan, thoiGian)) return "Bàn này đã bị trùng lịch!";
 
-            // Tự động tìm hoặc tạo khách hàng mới
-            string maKH = dal.GetKhachHangBySDT(sdt);
-            if (maKH == null)
-            {
-                maKH = dal.InsertKhachHang(tenKhach, sdt);
-                if (maKH == null) return "Lỗi tạo thông tin khách hàng!";
-            }
-
-            return dal.InsertDatBan(maBan, maKH, thoiGian) ? "Đặt bàn thành công!" : "Lỗi hệ thống.";
+            return dal.InsertDatBan(maBan, tenKhach, sdt, thoiGian) ? "Đặt bàn thành công!" : "Lỗi hệ thống.";
         }
 
         public bool CanSitAtTable(string maBan, out string reason)
@@ -155,7 +133,6 @@ namespace BLL
                 if (trangThai == "Chờ phản hồi" || trangThai == "Đã xác nhận")
                 {
                     TimeSpan diff = thoiGianDat - DateTime.Now;
-                    // Nếu còn dưới 2 tiếng nữa là đến giờ đặt khách khác
                     if (diff.TotalHours > 0 && diff.TotalHours < 2)
                     {
                         reason = $"Bàn có lịch đặt lúc {thoiGianDat:HH:mm}. Không nhận khách trước 2 tiếng.";
@@ -207,8 +184,6 @@ namespace BLL
                 string maHD = dal.GetUnpaidBillID(maBan);
                 if (maHD == null)
                 {
-                    // Tạo hóa đơn mới. Lưu ý: DAL InsertHoaDonWithNote nhận ghiChu nhưng SQL không lưu, 
-                    // tuy nhiên ta vẫn truyền vào để tuân thủ interface của DAL.
                     dal.InsertHoaDonWithNote(maBan, "khach1", ghiChu);
                     maHD = dal.GetUnpaidBillID(maBan);
                 }
@@ -223,35 +198,37 @@ namespace BLL
             catch (Exception ex) { return "Lỗi: " + ex.Message; }
         }
 
-        public bool Checkout(string maBan, string hinhThucTT, out string resultMessage)
+        public bool Checkout(string maBan, string hinhThucTT, out string resultMessage, out int pointsAdded)
         {
+            pointsAdded = 0;
             try
             {
                 string maHD = dal.GetUnpaidBillID(maBan);
 
                 if (maHD != null)
                 {
-                    try
-                    {
-                        dal.DeductInventoryOnCheckout(maHD);
-                    }
+                    try { dal.DeductInventoryOnCheckout(maHD); }
                     catch (Exception ex)
                     {
-                        // Nếu lỗi trừ kho (ví dụ lỗi SQL), dừng thanh toán và báo lỗi
-                        resultMessage = "Lỗi cập nhật kho hàng: " + ex.Message;
+                        resultMessage = "Lỗi cập nhật kho: " + ex.Message;
                         return false;
                     }
-                    DataTable dt = dal.ExecuteCheckout(maHD, hinhThucTT); // <--- HÀM QUAN TRỌNG
+
+                    DataTable dt = dal.ExecuteCheckout(maHD, hinhThucTT);
 
                     if (dt.Rows.Count > 0)
                     {
                         resultMessage = dt.Rows[0]["KetQua"].ToString();
+                        if (dt.Columns.Contains("DiemDuocCong") && dt.Rows[0]["DiemDuocCong"] != DBNull.Value)
+                        {
+                            pointsAdded = Convert.ToInt32(dt.Rows[0]["DiemDuocCong"]);
+                        }
                         return true;
                     }
-                    resultMessage = "Lỗi hệ thống khi thực thi thanh toán.";
+                    resultMessage = "Lỗi hệ thống khi thanh toán.";
                     return false;
                 }
-                resultMessage = "Không tìm thấy hóa đơn chưa thanh toán.";
+                resultMessage = "Không tìm thấy hóa đơn.";
                 return false;
             }
             catch (Exception ex)
@@ -261,14 +238,17 @@ namespace BLL
             }
         }
 
+        public string UpdateDishStatus(int idChiTiet, string trangThai)
+        {
+            return dal.UpdateChiTietTrangThai(idChiTiet, trangThai) ? "Cập nhật thành công" : "Lỗi cập nhật";
+        }
+
         // ==========================================================
         // 4. MODULE THỰC ĐƠN & MÓN
         // ==========================================================
         public DataTable GetListThucDon() => dal.GetListThucDon();
         public List<MonDTO> GetListMonAn(string maTD) => dal.GetMonByThucDon(maTD);
         public DataTable GetFullMenu() => dal.GetFullMenu();
-
-        // --- Danh mục (Thực đơn) ---
         public string AddCategory(string ten, string mt) => dal.ThemThucDon(ten, mt) ? "Thêm thành công" : "Lỗi";
         public string UpdateCategory(string id, string ten, string mt) => dal.SuaThucDon(id, ten, mt) ? "Sửa thành công" : "Lỗi";
         public string DeleteCategory(string id) => dal.XoaThucDon(id) ? "Xóa thành công" : "Không thể xóa (còn món ăn)";
@@ -284,15 +264,9 @@ namespace BLL
         {
             if (dal.ThemMon(m))
             {
-                // Vì SQL dùng Trigger sinh mã (INSTEAD OF INSERT) nên DAL không trả về ID ngay được.
-                // Logic workaround: Tìm món vừa thêm bằng cách lấy danh sách món của thực đơn đó,
-                // và tìm món có Tên khớp (hoặc ID lớn nhất nếu có thể sắp xếp).
-
                 List<MonDTO> listMon = dal.GetMonByThucDon(m.MaThucDon);
                 string newID = null;
 
-                // Lấy món có tên trùng. Nếu có nhiều món cùng tên, lấy cái cuối cùng (giả định là cái mới nhất)
-                // Lưu ý: SQL Trigger sinh mã MA-xxx tăng dần, nên string compare có thể đúng tương đối.
                 var found = listMon.Where(x => x.Ten == m.Ten).OrderByDescending(x => x.MaMon).FirstOrDefault();
 
                 if (found != null)
@@ -318,8 +292,7 @@ namespace BLL
         public string DeleteDishSafe(string maMon)
         {
             string check = dal.CheckCanDeleteDish(maMon);
-            if (check != "OK") return check; // Trả về lỗi nếu đã có hóa đơn
-
+            if (check != "OK") return check;
             return dal.XoaMon(maMon) ? "Xóa món thành công!" : "Lỗi hệ thống khi xóa.";
         }
 
@@ -351,14 +324,11 @@ namespace BLL
 
             decimal tongTien = 0;
 
-            // Tính tổng tiền dựa trên DTO mới (LuongThucTe * DonGia)
             foreach (var item in items)
             {
                 tongTien += item.LuongThucTe * item.DonGia;
             }
 
-            // Gọi DAL tạo phiếu. Tham số "Đã nhập" (tinhTrangChung) sẽ bị DAL bỏ qua do SQL không có cột này, 
-            // nhưng vẫn cần truyền để khớp chữ ký hàm.
             if (dal.CreateImportSlip(maNCC, maNV, tongTien, "Đã nhập", items))
             {
                 return "Nhập hàng thành công!";
@@ -369,23 +339,16 @@ namespace BLL
         // ==========================================================
         // 6. MODULE NHÂN SỰ
         // ==========================================================
-        // File: ServiceBLL.cs
-
-        // ... (giữ nguyên code)
-
-        // ==========================================================
-        // 6. MODULE NHÂN SỰ
-        // ==========================================================
         public DataTable GetAllStaffFull() => dal.GetAllStaffFull();
 
         public string AddStaff(NhanVienDTO nv)
         {
-            if (dal.GetUserByUsername(nv.SDT) != null)
+            if (dal.GetUserByUsername(nv.Email) != null)
             {
-                return "Lỗi: Số điện thoại này đã được dùng làm Tên đăng nhập!";
+                return "Lỗi: Email này đã được dùng làm Tên đăng nhập!";
             }
 
-            string maNV = dal.InsertStaffUser(nv.SDT, "123456", nv.VaiTro);
+            string maNV = dal.InsertStaffUser(nv.Email, "123456", nv.VaiTro);
 
             if (string.IsNullOrEmpty(maNV)) return "Lỗi hệ thống khi tạo tài khoản người dùng!";
 
@@ -399,7 +362,6 @@ namespace BLL
         {
             bool nvSuccess = dal.SuaNhanVien(nv.MaNV, nv.Ten, nv.SDT, nv.DiaChi, nv.Luong, nv.Email);
             bool userSuccess = dal.UpdateUserRoleAndStatus(nv.MaNV, nv.VaiTro, nv.TrangThaiTK);
-
             if (nvSuccess && userSuccess) return "Cập nhật thành công!";
             return "Lỗi cập nhật.";
         }
@@ -413,17 +375,16 @@ namespace BLL
 
         public string AddKhuyenMai(KhuyenMaiDTO km)
         {
-            if (km.GiaTriGiam <= 0 || km.DiemCanThiet <= 0) return "Giá trị giảm và điểm yêu cầu phải lớn hơn 0!";
-            // Ngày kết thúc cho phép NULL (không hết hạn), nhưng nếu có giá trị thì phải lớn hơn hiện tại
-            if (km.NgayKetThuc.HasValue && km.NgayKetThuc.Value <= DateTime.Now) return "Ngày kết thúc không hợp lệ!";
+            if (km.GiaTriGiam <= 0 || km.DiemCan <= 0) return "Giá trị giảm và điểm yêu cầu phải lớn hơn 0!";
+            if (km.NgayKT.HasValue && km.NgayKT.Value <= DateTime.Now) return "Ngày kết thúc không hợp lệ!";
 
             return dal.InsertKhuyenMai(km) ? "Thêm khuyến mãi thành công!" : "Lỗi thêm khuyến mãi.";
         }
 
         public string UpdateKhuyenMai(KhuyenMaiDTO km)
         {
-            if (km.GiaTriGiam <= 0 || km.DiemCanThiet <= 0) return "Giá trị giảm và điểm yêu cầu phải lớn hơn 0!";
-            if (km.NgayKetThuc.HasValue && km.NgayKetThuc.Value <= DateTime.Now) return "Ngày kết thúc không hợp lệ!";
+            if (km.GiaTriGiam <= 0 || km.DiemCan <= 0) return "Giá trị giảm và điểm yêu cầu phải lớn hơn 0!";
+            if (km.NgayKT.HasValue && km.NgayKT.Value <= DateTime.Now) return "Ngày kết thúc không hợp lệ!";
 
             return dal.UpdateKhuyenMai(km) ? "Cập nhật khuyến mãi thành công!" : "Lỗi cập nhật khuyến mãi.";
         }
@@ -437,24 +398,15 @@ namespace BLL
 
         public string UpdateMaKMToBill(string maHD, string maKH, string maKM)
         {
-            // Nếu chưa có MaKH, tìm/tạo khách hàng qua SĐT
             if (maKH == null)
             {
-                // Logic này cần được gọi trước khi mở form thanh toán nếu muốn lưu lại khách hàng mới
-                // Tạm thời, ta chỉ gán MaKM vào hóa đơn. MaKH sẽ được gán nếu đã có sẵn.
             }
 
-            // Gán MaKM và MaKH vào Hóa đơn (MaKH có thể là null nếu là khách vãng lai không SĐT)
             return dal.UpdateBillMaKM(maHD, maKM) ? "OK" : "Lỗi gán khuyến mãi";
         }
 
-        // Hàm MỚI: Trừ điểm khách hàng và tạo giao dịch Đổi Điểm sau khi thanh toán thành công
         public string DeductPointOnUse(string maHD, string maKH, string maKM, int diemDung)
         {
-            // Cần kiểm tra điểm lần nữa để đảm bảo tính toàn vẹn (nhưng Trigger đã làm việc này)
-            // Thay vào đó, ta chỉ cần ghi nhận giao dịch Đổi Điểm.
-
-            // Lưu ý: Trigger trg_TruDiemTichLuy trong SQL đã tự động trừ điểm khi Insert vào DoiDiem
             if (dal.InsertDoiDiem(maKH, maKM, diemDung))
             {
                 return "Trừ điểm thành công!";
@@ -470,8 +422,6 @@ namespace BLL
         // ==========================================================
         // 8. MODULE TÀI KHOẢN CÁ NHÂN (MỚI)
         // ==========================================================
-
-        // Lấy thông tin chi tiết nhân viên (bao gồm Lương) dựa trên Mã NV
         public NhanVienDTO GetStaffDetail(string maNV)
         {
             DataTable dt = dal.GetUserInfoFull(maNV);
@@ -485,6 +435,7 @@ namespace BLL
                     Ten = r["Ten"] != DBNull.Value ? r["Ten"].ToString() : "",
                     SDT = r["SDT"] != DBNull.Value ? r["SDT"].ToString() : "",
                     DiaChi = r["DiaChi"] != DBNull.Value ? r["DiaChi"].ToString() : "",
+                    Email = r["Email"] != DBNull.Value ? r["Email"].ToString() : "",
                     Luong = r["Luong"] != DBNull.Value ? Convert.ToDecimal(r["Luong"]) : 0,
                     VaiTro = r["VaiTro"].ToString(),
                     TrangThaiTK = r["TrangThai"].ToString()
@@ -493,34 +444,77 @@ namespace BLL
             return null;
         }
 
-        // Cập nhật thông tin cá nhân (chỉ địa chỉ)
         public string UpdatePersonalAddress(string maNV, string diaChiMoi)
         {
             NhanVienDTO nv = GetStaffDetail(maNV);
             if (nv != null)
             {
                 nv.DiaChi = diaChiMoi;
-                // Gọi hàm UpdateStaff (hàm này update bảng NhanVien)
                 return UpdateStaff(nv);
             }
             return "Không tìm thấy thông tin nhân viên để cập nhật.";
         }
 
-        // Đổi mật khẩu
         public string ChangePassword(string username, string newPass)
         {
             dal.ResetPass(username, newPass);
             return "Đổi mật khẩu thành công!";
         }
 
-        // Giả lập gửi OTP
-        public string SendOTP(string sdt)
+        public string GenerateOTP()
         {
-            // Trong thực tế, gọi API SMS ở đây.
-            // Demo: Random 6 số
             Random r = new Random();
-            string otp = r.Next(100000, 999999).ToString();
-            return otp;
+            return r.Next(100000, 999999).ToString();
+        }
+
+        public string SendRealEmail(string toEmail, string otpCode)
+        {
+            try
+            {
+                string fromEmail = "vnphtom1@gmail.com";
+                string password = "zaatvmwuudbkonsh";
+                MailMessage mail = new MailMessage();
+                mail.From = new MailAddress(fromEmail);
+                mail.To.Add(toEmail);
+                mail.Subject = "Mã xác thực đổi mật khẩu - Nhà Hàng Manager";
+                mail.Body = $"Mã OTP của bạn là: {otpCode}\nMã này có hiệu lực trong 5 phút. Vui lòng không chia sẻ cho ai.";
+                mail.IsBodyHtml = false;
+
+                SmtpClient smtp = new SmtpClient("smtp.gmail.com");
+                smtp.EnableSsl = true;
+                smtp.Port = 587;
+                smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
+                smtp.UseDefaultCredentials = false;
+                smtp.Credentials = new NetworkCredential(fromEmail, password);
+                System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+                smtp.Send(mail);
+                return "OK";
+            }
+            catch (Exception ex)
+            {
+                return "Lỗi gửi mail: " + ex.Message + "\n" + ex.InnerException?.Message;
+            }
+        }
+
+        public string CheckEmailAndSendOTP(string username, string inputEmail, out string generatedOTP)
+        {
+            generatedOTP = "";
+
+            string dbEmail = dal.GetEmailByUsername(username);
+
+            if (string.IsNullOrEmpty(dbEmail))
+            {
+                return "Tài khoản này chưa đăng ký Email trong hệ thống. Vui lòng liên hệ Admin.";
+            }
+
+            generatedOTP = GenerateOTP();
+            return SendRealEmail(dbEmail, generatedOTP);
+        }
+
+        public DataTable FindCustomers(string keyword, string type)
+        {
+            if (string.IsNullOrWhiteSpace(keyword)) return dal.GetListKhachHang();
+            return dal.SearchKhachHang(keyword, type);
         }
     }
 }

@@ -63,13 +63,10 @@ namespace DAL
 
         public string InsertStaffUser(string tenDN, string matKhau, string vaiTro)
         {
-            // [TRIGGER FIX]: Truyền MaNguoiDung='' để Trigger trg_NguoiDung tự sinh mã
             DBHelper.ExecuteNonQuery("INSERT INTO NguoiDung (MaNguoiDung, TenDN, MatKhau, VaiTro, TrangThai) VALUES ('', @sdt, @pass, @vaitro, N'Kích hoạt')",
                 new SqlParameter("@sdt", tenDN),
                 new SqlParameter("@pass", matKhau),
-                new SqlParameter("@vaitro", vaiTro)); // <<-- Sử dụng VaiTro từ tham số
-
-            // Lấy lại ID vừa sinh
+                new SqlParameter("@vaitro", vaiTro));
             return GetUserByUsername(tenDN)?.MaNguoiDung;
         }
 
@@ -94,7 +91,6 @@ namespace DAL
             return list;
         }
 
-        // [TRIGGER FIX]: Truyền MaBan='' để Trigger trg_Ban tự sinh mã
         public bool ThemBan(string ten, string loai)
         {
             return DBHelper.ExecuteNonQuery("INSERT INTO Ban (MaBan, Ten, Loai, TrangThai, TienCoc) VALUES ('', @t, @l, N'Trống', 0)",
@@ -120,23 +116,22 @@ namespace DAL
         }
 
         // --- Đặt Bàn ---
-        // [TRIGGER FIX]: Truyền MaDatBan='' để Trigger trg_DatBan tự sinh
-        public bool InsertDatBan(string maBan, string maKH, DateTime thoiGian)
+        public bool InsertDatBan(string maBan, string tenKH, string sdt, DateTime thoiGian)
         {
-            return DBHelper.ExecuteNonQuery(@"INSERT INTO DatBan (MaDatBan, MaKH, MaBan, ThoiGian, TrangThai) 
-                                              VALUES ('', @kh, @mb, @tg, N'Chờ phản hồi')",
-                new SqlParameter("@kh", maKH),
+            return DBHelper.ExecuteNonQuery(@"INSERT INTO DatBan (MaDatBan, MaBan, TenKH, SDT, ThoiGian, TrangThai) 
+                                              VALUES ('', @mb, @ten, @sdt, @tg, N'Chờ phản hồi')",
                 new SqlParameter("@mb", maBan),
+                new SqlParameter("@ten", tenKH),
+                new SqlParameter("@sdt", sdt),
                 new SqlParameter("@tg", thoiGian)) > 0;
         }
 
         public DataTable GetBookings(string maBan)
         {
-            return DBHelper.ExecuteQuery(@"SELECT d.MaDatBan, d.ThoiGian, k.Ten AS TenKhachHang, k.SDT, d.TrangThai 
-                                           FROM DatBan d 
-                                           LEFT JOIN KhachHang k ON d.MaKH = k.MaKH 
-                                           WHERE d.MaBan = @m 
-                                           ORDER BY d.ThoiGian DESC", new SqlParameter("@m", maBan));
+            return DBHelper.ExecuteQuery(@"SELECT MaDatBan, ThoiGian, TenKH AS TenKhachHang, SDT, TrangThai 
+                                           FROM DatBan 
+                                           WHERE MaBan = @m 
+                                           ORDER BY ThoiGian DESC", new SqlParameter("@m", maBan));
         }
 
         public bool CheckTrungLich(string maBan, DateTime thoiGian, string excludeID = null)
@@ -204,12 +199,10 @@ namespace DAL
             return res.Rows.Count > 0 ? res.Rows[0][0].ToString() : null;
         }
 
-        // [TRIGGER FIX]: Truyền MaHD='' để Trigger trg_HoaDon tự sinh
         public void InsertHoaDonWithNote(string maBan, string maKH, string ghiChu)
         {
-            // Lưu ý: Bảng HoaDon trong SQL bạn đưa KHÔNG có cột GhiChu, nên mình không insert GhiChu vào đây.
-            DBHelper.ExecuteNonQuery(@"INSERT INTO HoaDon (MaHD, MaBan, MaKH, ThoiGianLap, TrangThai, HinhThucThanhToan) 
-                                       VALUES ('', @m, @k, GETDATE(), N'Chưa thanh toán', N'Tiền mặt')",
+            DBHelper.ExecuteNonQuery(@"INSERT INTO HoaDon (MaHD, MaBan, MaKH, ThoiGian, TrangThai) 
+                               VALUES ('', @m, @k, GETDATE(), N'Chưa thanh toán')",
                 new SqlParameter("@m", maBan),
                 new SqlParameter("@k", (object)maKH ?? DBNull.Value));
 
@@ -234,9 +227,16 @@ namespace DAL
         public DataTable GetOrderDetails(string maHD)
         {
             return DBHelper.ExecuteQuery(@"SELECT c.ID, c.MaMon, m.Ten AS TenMon, c.SoLuong, m.Gia, 
-                                   (c.SoLuong * m.Gia) AS ThanhTien, c.GhiChu 
+                                   (c.SoLuong * m.Gia) AS ThanhTien, c.GhiChu, c.TrangThai 
                                    FROM ChiTietHD c JOIN Mon m ON c.MaMon = m.MaMon 
                                    WHERE c.MaHD=@h", new SqlParameter("@h", maHD));
+        }
+
+        public bool UpdateChiTietTrangThai(int id, string trangThai)
+        {
+            return DBHelper.ExecuteNonQuery("UPDATE ChiTietHD SET TrangThai = @tt WHERE ID = @id",
+                new SqlParameter("@tt", trangThai),
+                new SqlParameter("@id", id)) > 0;
         }
 
         public void DeductInventoryOnCheckout(string maHD)
@@ -286,23 +286,27 @@ namespace DAL
             return res != null ? res.ToString() : null;
         }
 
-        // [TRIGGER FIX]: Truyền ID='' để Trigger trg_NguoiDung tự sinh
-        public string InsertKhachHang(string ten, string sdt, string email = null)
+        public bool InsertKhachHang(KhachHangDTO kh)
         {
-            DBHelper.ExecuteNonQuery("INSERT INTO NguoiDung (MaNguoiDung, TenDN, MatKhau, VaiTro, TrangThai) VALUES ('', @sdt, '123456', N'Khách hàng', N'Kích hoạt')",
-                new SqlParameter("@sdt", sdt));
+            // Bước 1: Chèn vào NguoiDung để Trigger tự sinh mã
+            string sqlUser = "INSERT INTO NguoiDung (TenDN, MatKhau, VaiTro) VALUES (@tenDN, '123456', N'Khách hàng')";
+            DBHelper.ExecuteNonQuery(sqlUser, new SqlParameter("@tenDN", kh.SDT));
 
-            string maKH = GetUserByUsername(sdt)?.MaNguoiDung;
+            // Bước 2: Lấy MaNguoiDung vừa được sinh ra (dựa trên TenDN là SDT)
+            string queryGetID = "SELECT MaNguoiDung FROM NguoiDung WHERE TenDN = @sdt";
+            object res = DBHelper.ExecuteScalar(queryGetID, new SqlParameter("@sdt", kh.SDT));
 
-            if (maKH != null)
+            if (res != null)
             {
-                DBHelper.ExecuteNonQuery("INSERT INTO KhachHang (MaKH, Ten, SDT, Email) VALUES (@ma, @ten, @sdt, @em)",
-                    new SqlParameter("@ma", maKH),
-                    new SqlParameter("@ten", ten),
-                    new SqlParameter("@sdt", sdt),
-                    new SqlParameter("@em", (object)email ?? DBNull.Value));
+                // Bước 3: Chèn vào bảng KhachHang với MaKH vừa lấy được
+                string sqlKH = "INSERT INTO KhachHang (MaKH, Ten, SDT, Email, DiemTichLuy) VALUES (@ma, @ten, @sdt, @mail, 0)";
+                return DBHelper.ExecuteNonQuery(sqlKH,
+                    new SqlParameter("@ma", res.ToString()),
+                    new SqlParameter("@ten", kh.Ten),
+                    new SqlParameter("@sdt", kh.SDT),
+                    new SqlParameter("@mail", kh.Email)) > 0;
             }
-            return maKH;
+            return false;
         }
 
         public bool UpdateBillMaKM(string maHD, string maKM)
@@ -340,7 +344,6 @@ namespace DAL
 
         public DataTable GetFullMenu() => DBHelper.ExecuteQuery("SELECT MaMon, Ten, Gia FROM Mon");
 
-        // [TRIGGER FIX]: MaThucDon=''
         public bool ThemThucDon(string ten, string moTa)
             => DBHelper.ExecuteNonQuery("INSERT INTO ThucDon (MaThucDon, Ten, MoTa) VALUES ('', @t, @m)",
                 new SqlParameter("@t", ten), new SqlParameter("@m", moTa)) > 0;
@@ -356,7 +359,6 @@ namespace DAL
             return DBHelper.ExecuteNonQuery("DELETE FROM ThucDon WHERE MaThucDon=@id", new SqlParameter("@id", ma)) > 0;
         }
 
-        // [TRIGGER FIX]: MaMon=''
         public bool ThemMon(MonDTO m)
             => DBHelper.ExecuteNonQuery("INSERT INTO Mon (MaMon, MaThucDon, Ten, Gia, DiemTichLuy) VALUES ('', @td, @ten, @g, @d)",
                 new SqlParameter("@td", m.MaThucDon), new SqlParameter("@ten", m.Ten), new SqlParameter("@g", m.Gia), new SqlParameter("@d", m.DiemTichLuy)) > 0;
@@ -398,7 +400,6 @@ namespace DAL
         // --- Kho Nguyên Liệu ---
         public DataTable GetKhoHang() => DBHelper.ExecuteQuery("SELECT * FROM NguyenLieu");
 
-        // [TRIGGER FIX]: MaNguyenLieu=''
         public bool ThemNguyenLieu(string ten, string donVi)
         {
             return DBHelper.ExecuteNonQuery("INSERT INTO NguyenLieu (MaNguyenLieu, Ten, DonVi, SoLuongTon) VALUES ('', @t, @d, 0)",
@@ -431,13 +432,11 @@ namespace DAL
 
         public DataTable GetChiTietPhieuNhap(string maPhieu)
         {
-            // Sửa lại Query lấy LuongThucTe thay vì SoLuong
             return DBHelper.ExecuteQuery(@"SELECT c.MaNguyenLieu, n.Ten AS TenNguyenLieu, c.LuongThucTe AS SoLuong, c.LuongYeuCau, c.DonGia, c.TinhTrang
                                            FROM ChiTietNhap c JOIN NguyenLieu n ON c.MaNguyenLieu = n.MaNguyenLieu 
                                            WHERE c.MaPhieu = @m", new SqlParameter("@m", maPhieu));
         }
 
-        // [SQL UPDATE FIX]: Tương thích hoàn toàn với bảng PhieuNhapHang (bỏ TinhTrang) và ChiTietNhap (thêm chi tiết)
         public bool CreateImportSlip(string maNCC, string maNV, decimal tongTien, string tinhTrangChung, List<ChiTietNhapDTO> details)
         {
             using (SqlConnection conn = DBHelper.GetConnection())
@@ -485,10 +484,9 @@ namespace DAL
                     tran.Commit();
                     return true;
                 }
-                catch (Exception ex) // [SỬA]: Bắt lỗi và Ném ra ngoài (Throw)
+                catch (Exception ex)
                 {
                     tran.Rollback();
-                    // Ném lỗi ra để BLL và GUI bắt được nội dung lỗi (VD: Conflict khóa ngoại)
                     throw new Exception("Lỗi SQL: " + ex.Message);
                 }
             }
@@ -503,7 +501,6 @@ namespace DAL
         // --- Nhà Cung Cấp ---
         public DataTable GetNhaCungCap() => DBHelper.ExecuteQuery("SELECT * FROM NhaCungCap");
 
-        // [TRIGGER FIX]: MaNCC=''
         public bool ThemNCC(string t, string dc, string s)
             => DBHelper.ExecuteNonQuery("INSERT INTO NhaCungCap (MaNCC, Ten, DiaChi, SDT) VALUES ('', @t, @dc, @s)",
                 new SqlParameter("@t", t), new SqlParameter("@dc", dc), new SqlParameter("@s", s)) > 0;
@@ -524,100 +521,99 @@ namespace DAL
 
         public bool InsertNhanVien(string maNV, string t, string s, string d, decimal luong, string email = null)
         {
-            // MaNV đã được sinh ở NguoiDung
-            // THÊM: Luong
-            return DBHelper.ExecuteNonQuery("INSERT INTO NhanVien (MaNV, Ten, SDT, DiaChi, Luong) VALUES (@ma, @t, @s, @d, @l)",
+            return DBHelper.ExecuteNonQuery("INSERT INTO NhanVien (MaNV, Ten, SDT, DiaChi, Luong, Email) VALUES (@ma, @t, @s, @d, @l, @e)",
                 new SqlParameter("@ma", maNV),
                 new SqlParameter("@t", t),
                 new SqlParameter("@s", s),
                 new SqlParameter("@d", d),
                 new SqlParameter("@l", luong),
-                new SqlParameter("@e", (object)email ?? DBNull.Value)) > 0;
+                new SqlParameter("@e", (object)email ?? "")) > 0;
         }
 
         public bool SuaNhanVien(string ma, string t, string s, string d, decimal luong, string email = null)
-            => DBHelper.ExecuteNonQuery("UPDATE NhanVien SET Ten=@t, SDT=@s, DiaChi=@d, Luong=@l WHERE MaNV=@ma", // <<-- CẬP NHẬT
+            => DBHelper.ExecuteNonQuery("UPDATE NhanVien SET Ten=@t, SDT=@s, DiaChi=@d, Luong=@l WHERE MaNV=@ma",
                 new SqlParameter("@ma", ma),
                 new SqlParameter("@t", t),
                 new SqlParameter("@s", s),
                 new SqlParameter("@d", d),
                 new SqlParameter("@l", luong),
-                new SqlParameter("@e", (object)email ?? DBNull.Value)) > 0;
+                new SqlParameter("@e", (object)email ?? "")) > 0;
 
-        public bool UpdateUserRoleAndStatus(string maNV, string vaiTro, string trangThai) // <<-- SỬA CHỮ KÝ HÀM
+        public bool UpdateUserRoleAndStatus(string maNV, string vaiTro, string trangThai)
             => DBHelper.ExecuteNonQuery("UPDATE NguoiDung SET TrangThai=@tt, VaiTro=@vtr WHERE MaNguoiDung=@ma",
-                new SqlParameter("@ma", maNV), new SqlParameter("@tt", trangThai), new SqlParameter("@vtr", vaiTro)) > 0; // <<-- THÊM VaiTro
+                new SqlParameter("@ma", maNV), new SqlParameter("@tt", trangThai), new SqlParameter("@vtr", vaiTro)) > 0;
 
         public bool XoaNhanVien(string ma)
         {
-            // Xóa trong NhanVien trước (vì là khóa ngoại)
             int rows = DBHelper.ExecuteNonQuery("DELETE FROM NhanVien WHERE MaNV=@ma", new SqlParameter("@ma", ma));
-
-            // Xóa trong NguoiDung
             DBHelper.ExecuteNonQuery("DELETE FROM NguoiDung WHERE MaNguoiDung=@ma", new SqlParameter("@ma", ma));
 
             return rows > 0;
         }
 
         // ==========================================================
-        // 5. MODULE KHUYẾN MÃI (BỔ SUNG)
+        // 5. MODULE KHUYẾN MÃI
         // ==========================================================
 
         public List<KhuyenMaiDTO> GetListKhuyenMai()
         {
             var list = new List<KhuyenMaiDTO>();
-            // Lấy tất cả KM, sắp xếp theo ngày hết hạn (cái nào gần hết thì lên đầu)
-            DataTable dt = DBHelper.ExecuteQuery("SELECT * FROM KhuyenMai ORDER BY NgayKetThuc ASC");
+            string query = @"SELECT MaKM, Ten, MoTa, DiemCan, GiaTriGiam, LoaiGiam, NgayBD, NgayKT,
+                     CASE 
+                        WHEN NgayKT IS NOT NULL AND NgayKT < GETDATE() THEN N'Ngừng áp dụng'
+                        ELSE TrangThai 
+                     END AS TrangThai
+                     FROM KhuyenMai ORDER BY NgayKT ASC";
+
+            DataTable dt = DBHelper.ExecuteQuery(query);
             foreach (DataRow r in dt.Rows)
             {
                 list.Add(new KhuyenMaiDTO
                 {
                     MaKM = r["MaKM"].ToString(),
-                    TenKM = r["TenKM"].ToString(),
+                    Ten = r["Ten"].ToString(),
                     MoTa = r["MoTa"].ToString(),
-                    DiemCanThiet = Convert.ToInt32(r["DiemCanThiet"]),
+                    DiemCan = Convert.ToInt32(r["DiemCan"]),
                     GiaTriGiam = Convert.ToDecimal(r["GiaTriGiam"]),
                     LoaiGiam = r["LoaiGiam"].ToString(),
-                    NgayBatDau = Convert.ToDateTime(r["NgayBatDau"]),
-                    NgayKetThuc = r["NgayKetThuc"] != DBNull.Value ? (DateTime?)r["NgayKetThuc"] : null,
+                    NgayBD = Convert.ToDateTime(r["NgayBD"]),
+                    NgayKT = r["NgayKT"] != DBNull.Value ? (DateTime?)r["NgayKT"] : null,
                     TrangThai = r["TrangThai"].ToString()
                 });
             }
             return list;
         }
 
-        // [TRIGGER FIX]: Truyền MaKM='' để Trigger trg_KhuyenMai tự sinh
         public bool InsertKhuyenMai(KhuyenMaiDTO km)
         {
-            return DBHelper.ExecuteNonQuery(@"INSERT INTO KhuyenMai (MaKM, TenKM, MoTa, DiemCanThiet, GiaTriGiam, LoaiGiam, NgayKetThuc, TrangThai) 
+            return DBHelper.ExecuteNonQuery(@"INSERT INTO KhuyenMai (MaKM, Ten, MoTa, DiemCan, GiaTriGiam, LoaiGiam, NgayKT, TrangThai) 
                                               VALUES ('', @ten, @mt, @diem, @giam, @loai, @ketthuc, @tt)",
-                new SqlParameter("@ten", km.TenKM),
+                new SqlParameter("@ten", km.Ten),
                 new SqlParameter("@mt", km.MoTa),
-                new SqlParameter("@diem", km.DiemCanThiet),
+                new SqlParameter("@diem", km.DiemCan),
                 new SqlParameter("@giam", km.GiaTriGiam),
                 new SqlParameter("@loai", km.LoaiGiam),
-                new SqlParameter("@ketthuc", km.NgayKetThuc ?? (object)DBNull.Value), // Xử lý DateTime?
+                new SqlParameter("@ketthuc", km.NgayKT ?? (object)DBNull.Value),
                 new SqlParameter("@tt", km.TrangThai)) > 0;
         }
 
         public bool UpdateKhuyenMai(KhuyenMaiDTO km)
         {
-            return DBHelper.ExecuteNonQuery(@"UPDATE KhuyenMai SET TenKM=@ten, MoTa=@mt, DiemCanThiet=@diem, 
-                                              GiaTriGiam=@giam, LoaiGiam=@loai, NgayKetThuc=@ketthuc, TrangThai=@tt 
+            return DBHelper.ExecuteNonQuery(@"UPDATE KhuyenMai SET Ten=@ten, MoTa=@mt, DiemCan=@diem, 
+                                              GiaTriGiam=@giam, LoaiGiam=@loai, NgayKT=@ketthuc, TrangThai=@tt 
                                               WHERE MaKM=@ma",
                 new SqlParameter("@ma", km.MaKM),
-                new SqlParameter("@ten", km.TenKM),
+                new SqlParameter("@ten", km.Ten),
                 new SqlParameter("@mt", km.MoTa),
-                new SqlParameter("@diem", km.DiemCanThiet),
+                new SqlParameter("@diem", km.DiemCan),
                 new SqlParameter("@giam", km.GiaTriGiam),
                 new SqlParameter("@loai", km.LoaiGiam),
-                new SqlParameter("@ketthuc", km.NgayKetThuc ?? (object)DBNull.Value),
+                new SqlParameter("@ketthuc", km.NgayKT ?? (object)DBNull.Value),
                 new SqlParameter("@tt", km.TrangThai)) > 0;
         }
 
         public bool DeleteKhuyenMai(string maKM)
         {
-            // Kiểm tra ràng buộc khóa ngoại (DoiDiem, HoaDon) trước
             if ((int)DBHelper.ExecuteScalar("SELECT COUNT(*) FROM DoiDiem WHERE MaKM=@ma", new SqlParameter("@ma", maKM)) > 0)
                 return false;
             if ((int)DBHelper.ExecuteScalar("SELECT COUNT(*) FROM HoaDon WHERE MaKM=@ma", new SqlParameter("@ma", maKM)) > 0)
@@ -634,7 +630,6 @@ namespace DAL
 
         public DataTable ExecuteCheckout(string maHD, string hinhThucTT)
         {
-            // Gọi stored procedure USP_ThanhToanHoaDon
             string query = "EXEC USP_ThanhToanHoaDon @MaHD, @HinhThucThanhToan";
             return DBHelper.ExecuteQuery(query,
                 new SqlParameter("@MaHD", maHD),
@@ -643,8 +638,7 @@ namespace DAL
 
         public bool InsertDoiDiem(string maKH, string maKM, int diemDung)
         {
-            // Ghi nhận vào bảng DoiDiem. Trigger SQL sẽ tự động trừ điểm trong KhachHang.
-            return DBHelper.ExecuteNonQuery(@"INSERT INTO DoiDiem (MaGiaoDich, MaKH, MaKM, DiemDaDung, TrangThai) 
+            return DBHelper.ExecuteNonQuery(@"INSERT INTO DoiDiem (MaGD, MaKH, MaKM, DiemDung, TrangThai) 
                                       VALUES ('', @kh, @km, @diem, N'Thành công')",
                 new SqlParameter("@kh", maKH),
                 new SqlParameter("@km", maKM),
@@ -674,7 +668,6 @@ namespace DAL
 
         public DataTable GetUserInfoFull(string maNguoiDung)
         {
-            // Sử dụng COALESCE để lấy Tên/SĐT từ bảng NhanVien HOẶC QuanLy tùy xem user thuộc bảng nào
             string query = @"
                 SELECT 
                     nd.MaNguoiDung AS MaNV, 
@@ -682,7 +675,7 @@ namespace DAL
                     nd.TrangThai,
                     COALESCE(nv.Ten, ql.Ten) AS Ten,
                     COALESCE(nv.SDT, ql.SDT) AS SDT,
-                    nv.Email,
+                    COALESCE(nv.Email, ql.Email) AS Email,
                     ISNULL(nv.DiaChi, N'') AS DiaChi,
                     ISNULL(nv.Luong, 0) AS Luong
                 FROM NguoiDung nd
@@ -691,6 +684,66 @@ namespace DAL
                 WHERE nd.MaNguoiDung = @ma";
 
             return DBHelper.ExecuteQuery(query, new SqlParameter("@ma", maNguoiDung));
+        }
+
+        public string GetEmailByUsername(string username)
+        {
+            string query = @"
+                SELECT TOP 1 
+                    COALESCE(nv.Email, ql.Email, kh.Email) AS Email
+                FROM NguoiDung nd
+                LEFT JOIN NhanVien nv ON nd.MaNguoiDung = nv.MaNV
+                LEFT JOIN QuanLy ql ON nd.MaNguoiDung = ql.MaQL
+                LEFT JOIN KhachHang kh ON nd.MaNguoiDung = kh.MaKH
+                WHERE nd.TenDN = @u";
+
+            object result = DBHelper.ExecuteScalar(query, new SqlParameter("@u", username));
+            return result != null ? result.ToString() : null;
+        }
+
+        // ==========================================================
+        // 6. MODULE KHÁCH HÀNG
+        // ==========================================================
+
+        public DataTable GetListKhachHang()
+        {
+            return DBHelper.ExecuteQuery("SELECT MaKH, Ten, SDT, Email, DiemTichLuy FROM KhachHang");
+        }
+
+        public DataTable SearchKhachHang(string keyword, string type)
+        {
+            string colName = "Ten";
+
+            if (type == "SDT") colName = "SDT";
+            else if (type == "EMAIL") colName = "Email";
+
+            string query = $@"SELECT MaKH, Ten, SDT, Email, DiemTichLuy 
+                      FROM KhachHang 
+                      WHERE {colName} LIKE @k";
+            return DBHelper.ExecuteQuery(query, new SqlParameter("@k", "%" + keyword + "%"));
+        }
+
+        public bool DeleteKhachHang(string maKH)
+        {
+            try
+            {
+                string sqlKH = "DELETE FROM KhachHang WHERE MaKH = @ma";
+                string sqlND = "DELETE FROM NguoiDung WHERE MaNguoiDung = @ma";
+
+                DBHelper.ExecuteNonQuery(sqlKH, new SqlParameter("@ma", maKH));
+                return DBHelper.ExecuteNonQuery(sqlND, new SqlParameter("@ma", maKH)) > 0;
+            }
+            catch { return false; }
+        }
+
+        public bool UpdateKhachHang(KhachHangDTO kh)
+        {
+            string sql = "UPDATE KhachHang SET Ten = @ten, SDT = @sdt, Email = @mail WHERE MaKH = @ma";
+            return DBHelper.ExecuteNonQuery(sql,
+                new SqlParameter("@ma", kh.MaKH),
+                new SqlParameter("@ten", kh.Ten),
+                new SqlParameter("@sdt", kh.SDT),
+                new SqlParameter("@mail", kh.Email)) > 0;
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿USE master;
 GO
 
--- 1. CLEANUP & INIT DATABASE
+-- 1. CLEAN DATABASE
 IF EXISTS (SELECT * FROM sys.databases WHERE name = 'NhaHang')
 BEGIN
     ALTER DATABASE NhaHang SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -14,97 +14,95 @@ GO
 USE NhaHang;
 GO
 
--- =============================================
--- 2. TẠO BẢNG (GỐC + KHUYẾN MÃI/ĐỔI ĐIỂM)
--- =============================================
-
+-- 2. TABLES
 CREATE TABLE NguoiDung (
     MaNguoiDung VARCHAR(20) PRIMARY KEY,
     TenDN VARCHAR(255) UNIQUE NOT NULL,
-    MatKhau VARCHAR(255) NOT NULL,
-    TrangThai NVARCHAR(10) DEFAULT N'Kích hoạt',
-    VaiTro NVARCHAR(10),
+    MatKhau VARCHAR(255) DEFAULT '123456',
+    TrangThai NVARCHAR(255) DEFAULT N'Kích hoạt',
+    VaiTro NVARCHAR(255),
     SoLanSai INT DEFAULT 0
 );
 
 CREATE TABLE KhachHang (
     MaKH VARCHAR(20) PRIMARY KEY,
-    Ten NVARCHAR(255),
-    SDT VARCHAR(10),
-    Email VARCHAR(255),
+    Ten NVARCHAR(255) NOT NULL,
+    SDT VARCHAR(15),
+    Email VARCHAR(255) NOT NULL,
     DiemTichLuy INT DEFAULT 0,
     FOREIGN KEY (MaKH) REFERENCES NguoiDung(MaNguoiDung)
 );
 
 CREATE TABLE NhanVien (
     MaNV VARCHAR(20) PRIMARY KEY,
-    Ten NVARCHAR(255),
+    Ten NVARCHAR(255) NOT NULL,
     DiaChi NVARCHAR(255),
-    SDT VARCHAR(10),
-	Email VARCHAR(255),
-	Luong DECIMAL(18,2) DEFAULT 0,
+    SDT VARCHAR(15),
+	Email VARCHAR(255) NOT NULL,
+	Luong DECIMAL(18,2),
 	FOREIGN KEY (MaNV) REFERENCES NguoiDung(MaNguoiDung)
 );
 
 CREATE TABLE QuanLy (
     MaQL VARCHAR(20) PRIMARY KEY,
-    Ten NVARCHAR(255),
-    SDT VARCHAR(10) UNIQUE,
+    Ten NVARCHAR(255) NOT NULL,
+    SDT VARCHAR(15),
+	Email VARCHAR(255) NOT NULL,
     FOREIGN KEY (MaQL) REFERENCES NguoiDung(MaNguoiDung)
 );
 
 CREATE TABLE Ban (
     MaBan VARCHAR(20) PRIMARY KEY,
-    Loai NVARCHAR(10) NOT NULL DEFAULT N'Thường',
-    Ten NVARCHAR(255),
-    TienCoc DECIMAL(18,2) DEFAULT 0,
+    Loai NVARCHAR(255) NOT NULL,
+    Ten NVARCHAR(255) NOT NULL,
+    TienCoc DECIMAL(18,2),
     TrangThai NVARCHAR(255) DEFAULT N'Trống'
 );
 
 CREATE TABLE DatBan (
     MaDatBan VARCHAR(20) PRIMARY KEY,
-    MaKH VARCHAR(20),
     MaBan VARCHAR(20),
+	TenKH NVARCHAR(255) NOT NULL,
+	SDT VARCHAR(15) NOT NULL,
     ThoiGian DATETIME NOT NULL,
-    TrangThai NVARCHAR(15) DEFAULT N'Chờ phản hồi',
-    FOREIGN KEY (MaKH) REFERENCES KhachHang(MaKH),
+    TrangThai NVARCHAR(255) DEFAULT N'Chờ phản hồi',
     FOREIGN KEY (MaBan) REFERENCES Ban(MaBan)
 );
 
 CREATE TABLE ThucDon (
     MaThucDon VARCHAR(20) PRIMARY KEY,
-    Ten NVARCHAR(255),
+    Ten NVARCHAR(255) NOT NULL,
     MoTa NVARCHAR(255)
 );
 
 CREATE TABLE Mon (
     MaMon VARCHAR(20) PRIMARY KEY,
-    MaThucDon VARCHAR(20) NOT NULL,
-    Ten NVARCHAR(255),
-    Gia DECIMAL(18,2),
+    MaThucDon VARCHAR(20),
+    Ten NVARCHAR(255) NOT NULL,
+    Gia DECIMAL(18,2) NOT NULL,
     DiemTichLuy INT DEFAULT 0,
     FOREIGN KEY (MaThucDon) REFERENCES ThucDon(MaThucDon)
 );
 
 CREATE TABLE KhuyenMai (
     MaKM VARCHAR(20) PRIMARY KEY,
-    TenKM NVARCHAR(255) NOT NULL,
+    Ten NVARCHAR(255) NOT NULL,
     MoTa NVARCHAR(255),
-    DiemCanThiet INT NOT NULL, 
-    GiaTriGiam DECIMAL(18, 2), 
-    LoaiGiam NVARCHAR(10) DEFAULT N'Tiền mặt', 
-    NgayBatDau DATETIME DEFAULT GETDATE(),
-    NgayKetThuc DATETIME,
+    DiemCan INT NOT NULL, 
+    GiaTriGiam DECIMAL(18, 2) NOT NULL, 
+    LoaiGiam NVARCHAR(10) NOT NULL, 
+    NgayBD DATETIME DEFAULT GETDATE(),
+    NgayKT DATETIME,
     TrangThai NVARCHAR(255) DEFAULT N'Hoạt động'
 );
 
 CREATE TABLE DoiDiem (
-    MaGiaoDich VARCHAR(20) PRIMARY KEY,
-    MaKH VARCHAR(20) NOT NULL,
-    MaKM VARCHAR(20) NOT NULL,
-    ThoiGianDoi DATETIME DEFAULT GETDATE(),
-    DiemDaDung INT NOT NULL, 
-    TrangThai NVARCHAR(10) DEFAULT N'Thành công',
+    MaGD VARCHAR(20) PRIMARY KEY,
+    MaKH VARCHAR(20),
+    MaKM VARCHAR(20),
+    ThoiGian DATETIME DEFAULT GETDATE(),
+    DiemDung INT NOT NULL, 
+    TrangThai NVARCHAR(255) DEFAULT N'Thành công',
     FOREIGN KEY (MaKH) REFERENCES KhachHang(MaKH),
     FOREIGN KEY (MaKM) REFERENCES KhuyenMai(MaKM)
 );
@@ -114,10 +112,9 @@ CREATE TABLE HoaDon (
     MaBan VARCHAR(20),
     MaKH VARCHAR(20),
     MaKM VARCHAR(20), 
-    ThoiGianLap DATETIME DEFAULT GETDATE(),
-    TongTien DECIMAL(18,2) DEFAULT 0,
-    TrangThai NVARCHAR(20) DEFAULT N'Chưa thanh toán',
-    HinhThucThanhToan NVARCHAR(20) DEFAULT N'Tiền mặt',
+    ThoiGian DATETIME DEFAULT GETDATE(),
+    TongTien DECIMAL(18,2) NOT NULL,
+    TrangThai NVARCHAR(255) DEFAULT N'Chưa thanh toán',
     FOREIGN KEY (MaBan) REFERENCES Ban(MaBan),
     FOREIGN KEY (MaKM) REFERENCES KhuyenMai(MaKM)
 );
@@ -127,24 +124,25 @@ CREATE TABLE ChiTietHD (
     MaHD VARCHAR(20),
     MaMon VARCHAR(20),
     SoLuong INT DEFAULT 1,
-    DonGia DECIMAL(18,2) DEFAULT 0,
+    DonGia DECIMAL(18,2) NOT NULL,
     GhiChu NVARCHAR(255),
+	TrangThai NVARCHAR(255) NOT NULL DEFAULT N'Chưa phục vụ',
     FOREIGN KEY (MaHD) REFERENCES HoaDon(MaHD),
     FOREIGN KEY (MaMon) REFERENCES Mon(MaMon)
 );
 
 CREATE TABLE NguyenLieu (
     MaNguyenLieu VARCHAR(20) PRIMARY KEY,
-    Ten NVARCHAR(255),
+    Ten NVARCHAR(255) NOT NULL,
     SoLuongTon DECIMAL(18, 2) DEFAULT 0,
-    DonVi VARCHAR(5)
+    DonVi VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE NhaCungCap (
     MaNCC VARCHAR(20) PRIMARY KEY,
-    Ten NVARCHAR(255),
+    Ten NVARCHAR(255) NOT NULL,
     DiaChi NVARCHAR(255),
-    SDT VARCHAR(10)
+    SDT VARCHAR(10) NOT NULL
 );
 
 CREATE TABLE PhieuNhapHang (
@@ -152,7 +150,7 @@ CREATE TABLE PhieuNhapHang (
     MaNCC VARCHAR(20),
     MaNV VARCHAR(20),
     ThoiGian DATETIME DEFAULT GETDATE(),
-    TongTien DECIMAL(18,2),
+    TongTien DECIMAL(18,2) NOT NULL,
     FOREIGN KEY (MaNCC) REFERENCES NhaCungCap(MaNCC),
 	FOREIGN KEY (MaNV) REFERENCES NguoiDung(MaNguoiDung)
 );
@@ -160,29 +158,27 @@ CREATE TABLE PhieuNhapHang (
 CREATE TABLE ChiTietNhap (
     MaPhieu VARCHAR(20),
     MaNguyenLieu VARCHAR(20),
-    LuongYeuCau DECIMAL(18,2),
-	LuongThucTe DECIMAL(18,2),
-	DonGia DECIMAL(18,2),
-	TinhTrang NVARCHAR(10) DEFAULT N'Đủ',
+    LuongYeuCau DECIMAL(18,2) NOT NULL,
+	LuongThucTe DECIMAL(18,2) NOT NULL,
+	DonGia DECIMAL(18,2) NOT NULL,
+	TinhTrang NVARCHAR(255) DEFAULT N'Đủ',
     PRIMARY KEY (MaPhieu, MaNguyenLieu),
+	FOREIGN KEY (MaPhieu) REFERENCES PhieuNhapHang(MaPhieu),
     FOREIGN KEY (MaNguyenLieu) REFERENCES NguyenLieu(MaNguyenLieu)
 );
 
 CREATE TABLE CongThuc (
     MaMon VARCHAR(20),
     MaNguyenLieu VARCHAR(20),
-    LuongTieuHao DECIMAL(18,2),
+    LuongTieuHao DECIMAL(18,2) NOT NULL,
     PRIMARY KEY (MaMon, MaNguyenLieu),
     FOREIGN KEY (MaMon) REFERENCES Mon(MaMon),
     FOREIGN KEY (MaNguyenLieu) REFERENCES NguyenLieu(MaNguyenLieu)
 );
 GO
 
--- =============================================
--- 3. XÂY DỰNG TRIGGERS 
--- =============================================
-
--- 3.1. Trigger NguoiDung
+-- 3. TRIGGERS 
+-- 3.1. NguoiDung
 CREATE TRIGGER trg_NguoiDung ON NguoiDung
 INSTEAD OF INSERT
 AS
@@ -221,7 +217,7 @@ BEGIN
 END;
 GO
 
--- 3.2. Trigger Ban
+-- 3.2. Ban
 CREATE TRIGGER trg_Ban ON Ban
 INSTEAD OF INSERT
 AS
@@ -238,7 +234,7 @@ BEGIN
 END;
 GO
 
--- 3.3. Trigger ThucDon
+-- 3.3. ThucDon
 CREATE TRIGGER trg_ThucDon ON ThucDon
 INSTEAD OF INSERT
 AS
@@ -253,7 +249,7 @@ BEGIN
 END;
 GO
 
--- 3.4. Trigger Mon
+-- 3.4. Mon
 CREATE TRIGGER trg_Mon ON Mon
 INSTEAD OF INSERT
 AS
@@ -274,7 +270,7 @@ BEGIN
 END;
 GO
 
--- 3.5. Trigger NguyenLieu
+-- 3.5. NguyenLieu
 CREATE TRIGGER trg_NguyenLieu ON NguyenLieu
 INSTEAD OF INSERT
 AS
@@ -289,7 +285,7 @@ BEGIN
 END;
 GO
 
--- 3.6. Trigger NhaCungCap
+-- 3.6. NhaCungCap
 CREATE TRIGGER trg_NhaCungCap ON NhaCungCap
 INSTEAD OF INSERT
 AS
@@ -304,7 +300,10 @@ BEGIN
 END;
 GO
 
--- 3.7. Trigger DatBan
+-- 3.7. DatBan
+IF OBJECT_ID('trg_DatBan', 'TR') IS NOT NULL DROP TRIGGER trg_DatBan;
+GO
+
 CREATE TRIGGER trg_DatBan ON DatBan
 INSTEAD OF INSERT
 AS
@@ -314,15 +313,21 @@ BEGIN
     DECLARE @Max INT = ISNULL((SELECT MAX(CAST(RIGHT(MaDatBan, 4) AS INT)) FROM DatBan WHERE MaDatBan LIKE 'DB-' + @Today + '-%'), 0);
 
     ;WITH SourceData AS (SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RN FROM inserted)
-    INSERT INTO DatBan (MaDatBan, MaKH, MaBan, ThoiGian, TrangThai)
+    INSERT INTO DatBan (MaDatBan, MaBan, TenKH, SDT, ThoiGian, TrangThai)
     SELECT 
         'DB-' + @Today + '-' + RIGHT('0000' + CAST(@Max + RN AS VARCHAR(10)), 4),
-        MaKH, MaBan, ISNULL(ThoiGian, GETDATE()), ISNULL(TrangThai, N'Thành công')
+        MaBan, 
+        ISNULL(TenKH, N'Khách vãng lai'),
+        ISNULL(SDT, N''),
+        ISNULL(ThoiGian, GETDATE()), 
+        ISNULL(TrangThai, N'Chờ phản hồi')
     FROM SourceData;
 END;
 GO
 
--- 3.8. Trigger HoaDon
+-- 3.8. HoaDon
+IF OBJECT_ID('trg_HoaDon', 'TR') IS NOT NULL DROP TRIGGER trg_HoaDon;
+GO
 CREATE TRIGGER trg_HoaDon ON HoaDon
 INSTEAD OF INSERT
 AS
@@ -332,16 +337,16 @@ BEGIN
     DECLARE @Max INT = ISNULL((SELECT MAX(CAST(RIGHT(MaHD, 4) AS INT)) FROM HoaDon WHERE MaHD LIKE 'HD-' + @Today + '-%'), 0);
 
     ;WITH SourceData AS (SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RN FROM inserted)
-    INSERT INTO HoaDon (MaHD, MaBan, MaKH, MaKM, ThoiGianLap, TongTien, TrangThai, HinhThucThanhToan)
+    INSERT INTO HoaDon (MaHD, MaBan, MaKH, MaKM, ThoiGian, TongTien, TrangThai)
     SELECT 
         'HD-' + @Today + '-' + RIGHT('0000' + CAST(@Max + RN AS VARCHAR(10)), 4),
-        MaBan, MaKH, MaKM, ISNULL(ThoiGianLap, GETDATE()), ISNULL(TongTien, 0), 
-        ISNULL(TrangThai, N'Chưa thanh toán'), ISNULL(HinhThucThanhToan, N'Tiền mặt')
+        MaBan, MaKH, MaKM, ISNULL(ThoiGian, GETDATE()), ISNULL(TongTien, 0), 
+        ISNULL(TrangThai, N'Chưa thanh toán')
     FROM SourceData;
 END;
 GO
 
--- 3.9. Trigger PhieuNhapHang
+-- 3.9. PhieuNhapHang
 CREATE TRIGGER trg_PhieuNhapHang ON PhieuNhapHang
 INSTEAD OF INSERT
 AS
@@ -359,7 +364,9 @@ BEGIN
 END;
 GO
 
--- 3.10. Trigger KhuyenMai
+-- 3.10. KhuyenMai
+IF OBJECT_ID('trg_KhuyenMai', 'TR') IS NOT NULL DROP TRIGGER trg_KhuyenMai;
+GO
 CREATE TRIGGER trg_KhuyenMai ON KhuyenMai
 INSTEAD OF INSERT
 AS
@@ -368,34 +375,38 @@ BEGIN
     DECLARE @Max INT = ISNULL((SELECT MAX(CAST(SUBSTRING(MaKM, 4, 10) AS INT)) FROM KhuyenMai WHERE MaKM LIKE 'KM-%'), 0);
 
     ;WITH SourceData AS (SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RN FROM inserted)
-    INSERT INTO KhuyenMai (MaKM, TenKM, MoTa, DiemCanThiet, GiaTriGiam, LoaiGiam, NgayBatDau, NgayKetThuc, TrangThai)
+    INSERT INTO KhuyenMai (MaKM, Ten, MoTa, DiemCan, GiaTriGiam, LoaiGiam, NgayBD, NgayKT, TrangThai)
     SELECT 
         'KM-' + RIGHT('000' + CAST(@Max + RN AS VARCHAR(10)), 3),
-        TenKM, MoTa, DiemCanThiet, GiaTriGiam, ISNULL(LoaiGiam, N'Tiền mặt'), 
-        ISNULL(NgayBatDau, GETDATE()), NgayKetThuc, ISNULL(TrangThai, N'Hoạt động')
+        Ten, MoTa, DiemCan, GiaTriGiam, ISNULL(LoaiGiam, N'Tiền mặt'), 
+        ISNULL(NgayBD, GETDATE()), NgayKT, ISNULL(TrangThai, N'Hoạt động')
     FROM SourceData;
 END;
 GO
 
--- 3.11. Trigger DoiDiem
+-- 3.11. DoiDiem
+IF OBJECT_ID('trg_DoiDiem', 'TR') IS NOT NULL DROP TRIGGER trg_DoiDiem;
+GO
 CREATE TRIGGER trg_DoiDiem ON DoiDiem
 INSTEAD OF INSERT
 AS
 BEGIN
     SET NOCOUNT ON;
     DECLARE @Today CHAR(8) = CONVERT(CHAR(8), GETDATE(), 112);
-    DECLARE @Max INT = ISNULL((SELECT MAX(CAST(RIGHT(MaGiaoDich, 4) AS INT)) FROM DoiDiem WHERE MaGiaoDich LIKE 'DD-' + @Today + '-%'), 0);
+    DECLARE @Max INT = ISNULL((SELECT MAX(CAST(RIGHT(MaGD, 4) AS INT)) FROM DoiDiem WHERE MaGD LIKE 'DD-' + @Today + '-%'), 0);
 
     ;WITH SourceData AS (SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RN FROM inserted)
-    INSERT INTO DoiDiem (MaGiaoDich, MaKH, MaKM, ThoiGianDoi, DiemDaDung, TrangThai)
+    INSERT INTO DoiDiem (MaGD, MaKH, MaKM, ThoiGian, DiemDung, TrangThai)
     SELECT 
         'DD-' + @Today + '-' + RIGHT('0000' + CAST(@Max + RN AS VARCHAR(10)), 4),
-        MaKH, MaKM, ISNULL(ThoiGianDoi, GETDATE()), DiemDaDung, ISNULL(TrangThai, N'Thành công')
+        MaKH, MaKM, ISNULL(ThoiGian, GETDATE()), DiemDung, ISNULL(TrangThai, N'Thành công')
     FROM SourceData;
 END;
 GO
 
--- 3.12. Trigger TRỪ ĐIỂM TÍCH LŨY khi khách hàng đổi khuyến mãi thành công
+-- 3.12. TruDiemTichLuy
+IF OBJECT_ID('trg_TruDiemTichLuy', 'TR') IS NOT NULL DROP TRIGGER trg_TruDiemTichLuy;
+GO
 CREATE TRIGGER trg_TruDiemTichLuy ON DoiDiem
 AFTER INSERT
 AS
@@ -405,7 +416,7 @@ BEGIN
     IF EXISTS (SELECT 1 FROM inserted)
     BEGIN
         UPDATE KH
-        SET DiemTichLuy = KH.DiemTichLuy - I.DiemDaDung
+        SET DiemTichLuy = KH.DiemTichLuy - I.DiemDung
         FROM KhachHang KH
         INNER JOIN inserted I ON KH.MaKH = I.MaKH
         WHERE I.TrangThai = N'Thành công';
@@ -413,11 +424,7 @@ BEGIN
 END;
 GO
 
-
--- =============================================
--- 4. STRORED PROCEDURE (THANH TOÁN & ÁP DỤNG KM)
--- =============================================
-
+-- 4. STRORED PROCEDURE
 IF OBJECT_ID('USP_ThanhToanHoaDon', 'P') IS NOT NULL
     DROP PROCEDURE USP_ThanhToanHoaDon;
 GO
@@ -434,29 +441,26 @@ BEGIN
     DECLARE @LoaiGiam NVARCHAR(10);
     DECLARE @TongTienSauGiam DECIMAL(18, 2);
     DECLARE @MaKH VARCHAR(20);
+    DECLARE @DiemCong INT = 0; -- Biến lưu tổng điểm sẽ cộng
 
-    -- 1. Tính tổng tiền gốc các món trong hóa đơn
+    -- 1. Tính tổng tiền gốc và lấy thông tin hóa đơn
     SELECT @TongTienGoc = SUM(CTHD.SoLuong * CTHD.DonGia), @MaKM = HD.MaKM, @MaKH = HD.MaKH
     FROM HoaDon HD
     JOIN ChiTietHD CTHD ON HD.MaHD = CTHD.MaHD
     WHERE HD.MaHD = @MaHD
     GROUP BY HD.MaKM, HD.MaKH;
 
-    IF @TongTienGoc IS NULL OR @TongTienGoc = 0
-    BEGIN
-        RAISERROR(N'Hóa đơn không có món ăn nào.', 16, 1);
-        RETURN;
-    END
-
+    IF @TongTienGoc IS NULL SET @TongTienGoc = 0;
     SET @TongTienSauGiam = @TongTienGoc;
 
-    -- 2. Áp dụng Khuyến Mãi (nếu có)
+    -- 2. Áp dụng Khuyến Mãi (Nếu có)
     IF @MaKM IS NOT NULL
     BEGIN
+        -- Lấy thông tin khuyến mãi còn hạn
         SELECT @GiaTriGiam = GiaTriGiam, @LoaiGiam = LoaiGiam
         FROM KhuyenMai
         WHERE MaKM = @MaKM AND TrangThai = N'Hoạt động'
-        AND NgayKetThuc >= GETDATE();
+        AND (NgayKT IS NULL OR NgayKT >= GETDATE());
 
         IF @GiaTriGiam IS NOT NULL
         BEGIN
@@ -470,41 +474,51 @@ BEGIN
                 SET @TongTienSauGiam = @TongTienGoc - @GiaTriGiam;
                 IF @TongTienSauGiam < 0 SET @TongTienSauGiam = 0;
             END
-            
-            PRINT N'Áp dụng khuyến mãi ' + @MaKM + N'. Giảm giá: ' + 
-                  CAST((@TongTienGoc - @TongTienSauGiam) AS NVARCHAR(50)) + N' VNĐ.';
         END
         ELSE
         BEGIN
+            -- Nếu KM hết hạn hoặc bị khóa, xóa KM khỏi hóa đơn
             UPDATE HoaDon SET MaKM = NULL WHERE MaHD = @MaHD;
-            PRINT N'Mã khuyến mãi ' + @MaKM + N' không hợp lệ/hết hạn. Không áp dụng giảm giá.';
+            SET @MaKM = NULL;
         END
     END
     
-    -- 3. Cập nhật Hóa Đơn và Bàn
+    -- 3. Cập nhật Hóa Đơn và Trạng thái Bàn
     UPDATE HoaDon
     SET 
         TongTien = @TongTienSauGiam,
-        TrangThai = N'Đã thanh toán',
-        HinhThucThanhToan = @HinhThucThanhToan
+        TrangThai = N'Đã thanh toán'
     WHERE MaHD = @MaHD;
 
     DECLARE @MaBan VARCHAR(20) = (SELECT MaBan FROM HoaDon WHERE MaHD = @MaHD);
     UPDATE Ban SET TrangThai = N'Trống' WHERE MaBan = @MaBan;
 
-    -- 4. Cộng Điểm Tích Lũy mới cho Khách hàng (Mỗi 100K = 5 điểm)
-    DECLARE @DiemCong INT = FLOOR(@TongTienSauGiam / 100000) * 5;
-
+    -- 4. TÍNH ĐIỂM VÀ CỘNG ĐIỂM (Logic Mới)
     IF @MaKH IS NOT NULL
     BEGIN
+        -- A. Điểm từ tổng tiền hóa đơn (Quy đổi: 100.000 VNĐ = 5 điểm)
+        DECLARE @DiemBill INT = FLOOR(@TongTienSauGiam / 100000) * 5;
+
+        -- B. Điểm thưởng riêng từ từng món ăn (Lấy từ bảng Mon)
+        DECLARE @DiemMon INT = 0;
+        SELECT @DiemMon = SUM(ISNULL(m.DiemTichLuy, 0) * ct.SoLuong)
+        FROM ChiTietHD ct
+        JOIN Mon m ON ct.MaMon = m.MaMon
+        WHERE ct.MaHD = @MaHD;
+
+        -- Tổng điểm cộng
+        SET @DiemCong = @DiemBill + ISNULL(@DiemMon, 0);
+
+        -- Cập nhật vào Khách hàng
         UPDATE KhachHang
         SET DiemTichLuy = DiemTichLuy + @DiemCong
         WHERE MaKH = @MaKH;
-        PRINT N'Khách hàng được cộng thêm ' + CAST(@DiemCong AS NVARCHAR(10)) + N' điểm tích lũy.';
     END
 
-    SELECT N'Thanh toán thành công. Tổng tiền cuối cùng: ' + 
-           CAST(@TongTienSauGiam AS NVARCHAR(50)) + N' VNĐ.' AS KetQua;
+    -- 5. Trả về kết quả (Kèm cột DiemDuocCong cho C# sử dụng)
+    SELECT 
+        N'Thanh toán thành công. Tổng tiền: ' + FORMAT(@TongTienSauGiam, 'N0') + N' VNĐ.' AS KetQua,
+        @DiemCong AS DiemDuocCong;
 END;
 GO
 
@@ -517,32 +531,26 @@ CREATE PROCEDURE USP_GetDoanhThuLoiNhuan
     @Nam INT
 AS
 BEGIN
-    -- 1. Tạo bảng tạm chứa 12 tháng
     WITH Months AS (
         SELECT 1 AS Thang UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
         UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8
         UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12
     ),
-    -- 2. Tổng doanh thu (Chỉ hóa đơn đã thanh toán)
     Revenue AS (
-        SELECT MONTH(ThoiGianLap) AS Thang, SUM(TongTien) AS DoanhThu
+        SELECT MONTH(ThoiGian) AS Thang, SUM(TongTien) AS DoanhThu
         FROM HoaDon 
-        WHERE YEAR(ThoiGianLap) = @Nam AND TrangThai = N'Đã thanh toán'
-        GROUP BY MONTH(ThoiGianLap)
+        WHERE YEAR(ThoiGian) = @Nam AND TrangThai = N'Đã thanh toán'
+        GROUP BY MONTH(ThoiGian)
     ),
-    -- 3. Chi phí nhập hàng
     ImportCost AS (
         SELECT MONTH(ThoiGian) AS Thang, SUM(TongTien) AS ChiPhiNhap
         FROM PhieuNhapHang 
         WHERE YEAR(ThoiGian) = @Nam
         GROUP BY MONTH(ThoiGian)
     ),
-    -- 4. Tổng lương nhân viên (Cố định theo tháng hiện tại - giả định)
     SalaryCost AS (
         SELECT SUM(Luong) AS TongLuong FROM NhanVien
     )
-    
-    -- 5. Tổng hợp
     SELECT 
         m.Thang,
         ISNULL(r.DoanhThu, 0) AS DoanhThu,
@@ -557,136 +565,95 @@ BEGIN
     ORDER BY m.Thang;
 END;
 GO
--- =============================================
--- 5. CHÈN DỮ LIỆU MẪU VÀ KIỂM THỬ (ĐÃ SỬA LỖI BIẾN CỤC BỘ)
--- =============================================
 
--- KHAI BÁO BIẾN CHUNG CHO TOÀN BỘ PHẦN CHÈN DỮ LIỆU VÀ KIỂM THỬ
-DECLARE @MaKH_Test VARCHAR(20);
-DECLARE @MaNV_Test VARCHAR(20);
-DECLARE @MaQL_Test VARCHAR(20);
+-- 5. DATA
+DELETE FROM ChiTietHD; DELETE FROM HoaDon; DELETE FROM DoiDiem; 
+DELETE FROM KhuyenMai; DELETE FROM ChiTietNhap; DELETE FROM PhieuNhapHang;
+DELETE FROM CongThuc; DELETE FROM NguyenLieu; DELETE FROM Mon; 
+DELETE FROM ThucDon; DELETE FROM DatBan; DELETE FROM Ban; 
+DELETE FROM QuanLy; DELETE FROM NhanVien; DELETE FROM KhachHang; DELETE FROM NguoiDung; 
+DELETE FROM NhaCungCap;
+
+DECLARE @MaKH_Test VARCHAR(20), @MaNV_Test VARCHAR(20), @MaQL_Test VARCHAR(20);
 DECLARE @MaBan_Test VARCHAR(20);
-DECLARE @MaTD_Chinh VARCHAR(20);
-DECLARE @MaTD_Nuoc VARCHAR(20);
-DECLARE @MaMon_BoBifTet VARCHAR(20);
-DECLARE @MaMon_Coca VARCHAR(20);
+DECLARE @MaTD_Chinh VARCHAR(20), @MaTD_Nuoc VARCHAR(20);
+DECLARE @MaMon_BoBifTet VARCHAR(20), @MaMon_Coca VARCHAR(20);
 DECLARE @MaKM_Giam50K VARCHAR(20);
 DECLARE @MaHD_Moi VARCHAR(20);
 
--- 5.1. Chèn NguoiDung
+-- 5.1. Người dùng
 INSERT INTO NguoiDung (TenDN, MatKhau, VaiTro) VALUES
     ('admin1', '123456', N'Quản lý'),
     ('thungan1', '123456', N'Thu ngân'),
     ('phucvu1', '123456', N'Phục vụ'),
     ('khach1', '123456', N'Khách hàng');
--- ĐÃ XÓA GO Ở ĐÂY ĐỂ TRÁNH LỖI BIẾN CỤC BỘ
 
--- Lấy mã KH và NV/QL
-SET @MaKH_Test = (SELECT TOP 1 MaNguoiDung FROM NguoiDung WHERE TenDN = 'khach1');
-SET @MaNV_Test = (SELECT TOP 1 MaNguoiDung FROM NguoiDung WHERE TenDN = 'thungan1');
-SET @MaQL_Test = (SELECT TOP 1 MaNguoiDung FROM NguoiDung WHERE TenDN = 'admin1');
+SELECT TOP 1 @MaKH_Test = MaNguoiDung FROM NguoiDung WHERE TenDN = 'khach1';
+SELECT TOP 1 @MaNV_Test = MaNguoiDung FROM NguoiDung WHERE TenDN = 'thungan1';
+SELECT TOP 1 @MaQL_Test = MaNguoiDung FROM NguoiDung WHERE TenDN = 'admin1';
 
--- 5.2. Chèn thông tin chi tiết
-INSERT INTO QuanLy (MaQL, Ten, SDT)
-SELECT @MaQL_Test, N'Nguyễn Văn Quản Lý', '0909000001';
+INSERT INTO QuanLy (MaQL, Ten, Email, SDT) 
+VALUES (@MaQL_Test, N'Nguyễn Văn Quản Lý', 'admin@nhahang.com', '0909000001');
 
-INSERT INTO NhanVien (MaNV, Ten, SDT, Luong) -- <<-- CẬP NHẬT
-SELECT @MaNV_Test, N'Lê Thu Ngân', '0909000002', 8000000; -- <<-- Thêm lương 8 triệu
+INSERT INTO NhanVien (MaNV, Ten, SDT, Luong, Email, DiaChi) VALUES 
+(@MaNV_Test, N'Lê Thu Ngân', '0909000002', 8000000, 'ngan.thu@nhahang.com', N'Hà Nội');
 
-INSERT INTO NhanVien (MaNV, Ten, SDT, Luong) -- <<-- CẬP NHẬT
-SELECT MaNguoiDung, N'Trần Phục Vụ', '0909000003', 6000000 -- <<-- Thêm lương 6 triệu
+INSERT INTO NhanVien (MaNV, Ten, SDT, Luong, Email, DiaChi)
+SELECT MaNguoiDung, N'Trần Phục Vụ', '0909000003', 6000000, 'phucvu@nhahang.com', N'Hà Nội'
 FROM NguoiDung WHERE TenDN = 'phucvu1';
 
-INSERT INTO KhachHang (MaKH, Ten, SDT, DiemTichLuy)
-SELECT @MaKH_Test, N'Khách Vãng Lai', '0901234567', 150; 
+INSERT INTO KhachHang (MaKH, Ten, SDT, DiemTichLuy, Email) VALUES 
+(@MaKH_Test, N'Khách Vãng Lai', '0901234567', 150, 'khach1@gmail.com');
 
--- 5.3. Chèn Bàn
-INSERT INTO Ban (Ten, Loai) VALUES
-    (N'Bàn 1', N'Thường'),
-    (N'Bàn 2', N'Thường'),
-    (N'Bàn 3', N'VIP');
-SET @MaBan_Test = (SELECT MaBan FROM Ban WHERE Ten = N'Bàn 1');
+-- 5.2. Bàn
+INSERT INTO Ban (Ten, Loai) VALUES (N'Bàn 1', N'Thường'), (N'Bàn 2', N'Thường'), (N'Bàn 3', N'VIP');
+SELECT TOP 1 @MaBan_Test = MaBan FROM Ban WHERE Ten = N'Bàn 1';
 
--- 5.4. Chèn Thực Đơn và Món
-INSERT INTO ThucDon (Ten, MoTa) VALUES
-    (N'Món chính', N'Các món ăn chính trong bữa'),
-    (N'Đồ uống', N'Nước ngọt và bia');
-SET @MaTD_Chinh = (SELECT MaThucDon FROM ThucDon WHERE Ten=N'Món chính');
-SET @MaTD_Nuoc = (SELECT MaThucDon FROM ThucDon WHERE Ten=N'Đồ uống');
+-- 5.3. Thực Đơn và Món
+INSERT INTO ThucDon (Ten, MoTa) VALUES (N'Món chính', N'Các món ăn chính'), (N'Đồ uống', N'Nước giải khát');
+SELECT TOP 1 @MaTD_Chinh = MaThucDon FROM ThucDon WHERE Ten=N'Món chính';
+SELECT TOP 1 @MaTD_Nuoc = MaThucDon FROM ThucDon WHERE Ten=N'Đồ uống';
 
-INSERT INTO Mon (MaThucDon, Ten, Gia)
-VALUES (@MaTD_Chinh, N'Bò bít tết', 120000),
-       (@MaTD_Nuoc, N'Coca Cola', 20000);
-SET @MaMon_BoBifTet = (SELECT MaMon FROM Mon WHERE Ten = N'Bò bít tết');
-SET @MaMon_Coca = (SELECT MaMon FROM Mon WHERE Ten = N'Coca Cola');
+INSERT INTO Mon (MaThucDon, Ten, Gia) VALUES 
+(@MaTD_Chinh, N'Bò bít tết', 120000), (@MaTD_Nuoc, N'Coca Cola', 20000);
 
--- 5.5. Chèn Nguyên Liệu và Công Thức
-INSERT INTO NguyenLieu (Ten, SoLuongTon, DonVi) VALUES 
-(N'Thịt bò', 10, N'kg'),
-(N'Coca chai', 100, N'l'),
-(N'Gạo', 50, N'kg');
+SELECT TOP 1 @MaMon_BoBifTet = MaMon FROM Mon WHERE Ten = N'Bò bít tết';
+SELECT TOP 1 @MaMon_Coca = MaMon FROM Mon WHERE Ten = N'Coca Cola';
 
-INSERT INTO CongThuc (MaMon, MaNguyenLieu, LuongTieuHao)
-VALUES 
-(@MaMon_BoBifTet, (SELECT MaNguyenLieu FROM NguyenLieu WHERE Ten = N'Thịt bò'), 0.3),
-(@MaMon_Coca, (SELECT MaNguyenLieu FROM NguyenLieu WHERE Ten = N'Coca chai'), 0.33);
+-- 5.4. Nguyên Liệu và Công Thức
+INSERT INTO NguyenLieu (Ten, SoLuongTon, DonVi) VALUES (N'Thịt bò', 10, N'kg'), (N'Coca chai', 100, N'l');
 
--- 5.6. Chèn Nhà Cung Cấp & Phiếu Nhập Hàng
-INSERT INTO NhaCungCap (Ten, DiaChi, SDT) VALUES
-(N'Công ty Thực Phẩm Sạch', N'Quận 1, TP.HCM', '0283999999');
+DECLARE @MaNL_Bo VARCHAR(20) = (SELECT MaNguyenLieu FROM NguyenLieu WHERE Ten = N'Thịt bò');
+DECLARE @MaNL_Coca VARCHAR(20) = (SELECT MaNguyenLieu FROM NguyenLieu WHERE Ten = N'Coca chai');
 
-INSERT INTO PhieuNhapHang (MaNCC, MaNV, TongTien)
-VALUES 
-(
-    (SELECT TOP 1 MaNCC FROM NhaCungCap), 
-    @MaNV_Test,
-    5000000
-);
+INSERT INTO CongThuc (MaMon, MaNguyenLieu, LuongTieuHao) VALUES 
+(@MaMon_BoBifTet, @MaNL_Bo, 0.3),
+(@MaMon_Coca, @MaNL_Coca, 0.33);
 
--- 5.7. Chèn Khuyến Mãi
-INSERT INTO KhuyenMai (TenKM, MoTa, DiemCanThiet, GiaTriGiam, LoaiGiam, NgayKetThuc) VALUES
+-- 5.5. Nhà Cung Cấp & Phiếu Nhập
+INSERT INTO NhaCungCap (Ten, DiaChi, SDT) VALUES (N'CTY Thực Phẩm Sạch', N'HCM', '0283999999');
+INSERT INTO PhieuNhapHang (MaNCC, MaNV, TongTien) VALUES ((SELECT TOP 1 MaNCC FROM NhaCungCap), @MaNV_Test, 5000000);
+INSERT INTO ChiTietNhap (MaPhieu, MaNguyenLieu, LuongYeuCau, LuongThucTe, DonGia) VALUES 
+((SELECT TOP 1 MaPhieu FROM PhieuNhapHang), @MaNL_Bo, 20, 20, 250000);
+
+-- 5.6. Khuyến Mãi
+INSERT INTO KhuyenMai (Ten, MoTa, DiemCan, GiaTriGiam, LoaiGiam, NgayKT) VALUES
     (N'Giảm 50K hóa đơn', N'Giảm 50.000 VNĐ', 100, 50000, N'Tiền mặt', DATEADD(month, 1, GETDATE())),
-    (N'Giảm 10% tổng bill', N'Giảm 10% trên tổng hóa đơn', 200, 10, N'Phần trăm', DATEADD(month, 2, GETDATE()));
-SET @MaKM_Giam50K = (SELECT MaKM FROM KhuyenMai WHERE DiemCanThiet = 100);
+    (N'Giảm 10% tổng bill', N'Giảm 10%', 200, 10, N'Phần trăm', DATEADD(month, 2, GETDATE()));
 
--- 5.8. Chèn giao dịch Đổi Điểm (Trừ 100 điểm)
-INSERT INTO DoiDiem (MaKH, MaKM, DiemDaDung) 
-VALUES (@MaKH_Test, @MaKM_Giam50K, 100);
+SELECT TOP 1 @MaKM_Giam50K = MaKM FROM KhuyenMai WHERE DiemCan = 100;
+
+-- 5.7. Điểm
+INSERT INTO DoiDiem (MaKH, MaKM, DiemDung) VALUES (@MaKH_Test, @MaKM_Giam50K, 100);
+
 PRINT N'--- Sau khi đổi điểm (150 - 100 = 50 điểm còn lại) ---';
 SELECT MaKH, Ten, DiemTichLuy FROM KhachHang WHERE MaKH = @MaKH_Test;
 
--- 5.9. Tạo Hóa Đơn và Áp dụng KM
-UPDATE Ban SET TrangThai = N'Đang phục vụ' WHERE MaBan = @MaBan_Test;
+-- 5.8. Hóa Đơn
+UPDATE Ban SET TrangThai = N'Có khách' WHERE MaBan = @MaBan_Test;
+INSERT INTO HoaDon (MaBan, MaKH, MaKM) VALUES (@MaBan_Test, @MaKH_Test, @MaKM_Giam50K);
+SELECT @MaHD_Moi = MAX(MaHD) FROM HoaDon;
 
-INSERT INTO HoaDon (MaBan, MaKH, MaKM) 
-VALUES (@MaBan_Test, @MaKH_Test, @MaKM_Giam50K); 
-SET @MaHD_Moi = (SELECT MAX(MaHD) FROM HoaDon);
-
--- Thêm Chi Tiết Hóa Đơn (Tổng tiền gốc: 660,000 VNĐ)
 INSERT INTO ChiTietHD (MaHD, MaMon, SoLuong, DonGia) VALUES
 (@MaHD_Moi, @MaMon_BoBifTet, 5, 120000), 
 (@MaHD_Moi, @MaMon_Coca, 3, 20000);
-
--- 5.10. KIỂM THỬ THANH TOÁN
-PRINT N'--- Thực hiện thanh toán (Tổng tiền gốc 660K, giảm 50K -> 610K) ---';
-EXEC USP_ThanhToanHoaDon @MaHD = @MaHD_Moi, @HinhThucThanhToan = N'Chuyển khoản';
-
--- 5.11. KIỂM TRA KẾT QUẢ CUỐI CÙNG (Sử dụng biến đã được set giá trị)
-PRINT N'--- KẾT QUẢ CUỐI CÙNG ---';
-
-SELECT N'1. Chi tiết Hóa Đơn (TongTien=610,000, TrangThai=Đã thanh toán)' AS Description;
-SELECT MaHD, MaKM, TongTien, TrangThai, HinhThucThanhToan 
-FROM HoaDon WHERE MaHD = @MaHD_Moi;
-
-SELECT N'2. Trạng thái Bàn (Trống)' AS Description;
-SELECT MaBan, TrangThai FROM Ban WHERE MaBan = @MaBan_Test;
-
-SELECT N'3. Điểm Tích Lũy Khách Hàng (50 điểm còn lại + 30 điểm mới = 80 điểm)' AS Description;
-SELECT MaKH, Ten, DiemTichLuy FROM KhachHang WHERE MaKH = @MaKH_Test;
-
--- =============================================
--- KẾT THÚC SCRIPT HOÀN CHỈNH
--- =============================================
-SELECT * FROM NguoiDung
-SELECT * FROM KhachHang
-SELECT * FROM NhanVien
