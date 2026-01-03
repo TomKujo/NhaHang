@@ -1,0 +1,12 @@
+-	Tải cơ sở dữ liệu và mã nguồn tại: drive.google.com/file/d/1-8QQsYvOTmFsF_HJwgsGDFzHHgUieQcP/view?usp=sharing
+-	Giải nén tệp vừa tải.
+-	Tải SQL Server tại: microsoft.com/en-us/sql-server/sql-server-downloads
+-	Cài đặt SQL Server.
+-	Mở NhaHang.sql trong thư mục giải nén.
+-	Kết nối SQL.
+-	Chạy toàn bộ SQL.
+-	Tải Visual Studio 2022 tại: visualstudio.microsoft.com/downloads/
+-	Cài đặt Visual Studio 2022.
+-	Mở NhaHang.sln trong thư mục NhaHang trong thư mục giải nén.
+-	Truy cập tệp DBHelper.cs trong thư mục DAL
+-	Thay tên máy chủ tại phần tô đậm.
