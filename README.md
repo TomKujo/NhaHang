@@ -1,4 +1,4 @@
--	Tải cơ sở dữ liệu và mã nguồn tại: drive.google.com/file/d/1-8QQsYvOTmFsF_HJwgsGDFzHHgUieQcP/view?usp=sharing
+-	Tải cơ sở dữ liệu và mã nguồn tại: 
 -	Giải nén tệp vừa tải.
 -	Tải SQL Server tại: microsoft.com/en-us/sql-server/sql-server-downloads
 -	Cài đặt SQL Server.
